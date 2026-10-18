@@ -3,7 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Controle de Honorários</title>
+<title>Acesso restrito</title>
+<meta name="robots" content="noindex,nofollow">
 <style>
 :root{--bg:#f4f6f8;--card:#fff;--tx:#1d2330;--mut:#667085;--bd:#e2e6ea;--pri:#1f6f5c;--pri-d:#185a4a;--pri2:#e6f2ee;--warn:#b54708;--warn2:#fef0c7;--err:#b42318;--err2:#fee4e2;--ok:#067647;--ok2:#dcfae6;--wa:#1fa855}
 *{box-sizing:border-box}
@@ -80,7 +81,7 @@ tr:hover td{background:#fafcfb}
 .hdrR button{background:rgba(255,255,255,.12);border:0;color:#fff;padding:5px 10px;border-radius:6px;cursor:pointer;font:inherit}
 #sync{padding:3px 8px;border-radius:20px;background:rgba(255,255,255,.12);white-space:nowrap}
 #sync.err,#sync.conf{background:#fee4e2;color:#b42318}
-body:not(.logado) #nav,body:not(.logado) .hdrR{display:none}
+body:not(.logado) header{display:none}
 .login{max-width:380px;margin:60px auto}
 .login .card{padding:24px}
 .login input{margin-bottom:12px}
@@ -182,7 +183,7 @@ function salvarConexao(){const url=$('#sUrl').value.trim().replace(/\/+$/,''),ke
   if(!/^https:\/\/.+/.test(url)||!key){alert('Preencha a URL (começando com https://) e a chave.');return}
   localStorage.setItem('honorarios_sb',JSON.stringify({url,key}));boot()}
 function telaLogin(){const cfg=sbCfg();
-  $('#app').innerHTML=`<div class="login"><div class="card"><h2>Controle de Honorários</h2>
+  $('#app').innerHTML=`<div class="login"><div class="card"><h2>🔒 Acesso restrito</h2><p class="muted" style="margin-top:-6px">Entre com seu usuário e senha.</p>
   <form onsubmit="entrar();return false"><label>E-mail</label><input id="lEmail" type="email" autocomplete="username" required>
   <label>Senha</label><input id="lSenha" type="password" autocomplete="current-password" required>
   <div class="msg" id="lMsg"></div><button class="btn p" style="width:100%" id="lBtn">Entrar</button></form>
@@ -193,11 +194,11 @@ async function entrar(){const btn=$('#lBtn');btn.disabled=true;btn.textContent='
   if(error){btn.disabled=false;btn.textContent='Entrar';$('#lMsg').textContent=/invalid/i.test(error.message)?'E-mail ou senha incorretos.':error.message;return}
   await iniciar(data.user)}
 async function iniciar(user){
-  userId=user.id;$('#app').innerHTML='<div class="empty">Carregando dados…</div>';
+  userId=user.id;$('#app').innerHTML='<div class="empty">Carregando…</div>';
   const {data,error}=await sb.from('honorarios').select('data,rev').eq('user_id',userId).maybeSingle();
   if(error){$('#app').innerHTML=`<div class="login"><div class="card"><h2>Erro ao carregar</h2><p>${esc(error.message)}</p><p class="muted">Confira se você rodou o script <b>supabase.sql</b> no SQL Editor do projeto.</p><button class="btn" onclick="sair()">Sair</button></div></div>`;return}
   if(data){db=normalize(data.data);rev=data.rev}else{db=blank();rev=0}
-  $('#hdrUser').textContent=user.email;document.body.classList.add('logado');render();setSync('ok')}
+  $('#hdrUser').textContent=user.email;document.title='Controle de Honorários';document.body.classList.add('logado');render();setSync('ok')}
 async function sair(){if(pendente||salvando){if(!confirm('Ainda há alterações sendo salvas. Sair mesmo assim?'))return}
   await sb.auth.signOut();location.reload()}
 
