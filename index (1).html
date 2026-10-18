@@ -1,0 +1,527 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Controle de Honorários</title>
+<style>
+:root{--bg:#f4f6f8;--card:#fff;--tx:#1d2330;--mut:#667085;--bd:#e2e6ea;--pri:#1f6f5c;--pri-d:#185a4a;--pri2:#e6f2ee;--warn:#b54708;--warn2:#fef0c7;--err:#b42318;--err2:#fee4e2;--ok:#067647;--ok2:#dcfae6;--wa:#1fa855}
+*{box-sizing:border-box}
+body{margin:0;font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--tx)}
+header{background:var(--pri);color:#fff;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+header h1{font-size:17px;margin:0;font-weight:650}
+header small{opacity:.75;font-weight:400;margin-left:6px}
+nav{display:flex;gap:4px;flex-wrap:wrap}
+nav button{background:transparent;border:0;color:#d4ebe3;padding:8px 13px;border-radius:7px;cursor:pointer;font:inherit}
+nav button:hover{background:rgba(255,255,255,.08)}
+nav button.on{background:rgba(255,255,255,.18);color:#fff;font-weight:600}
+main{max-width:1180px;margin:0 auto;padding:20px 16px 60px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:16px;margin-bottom:16px}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.sp{flex:1}
+h2{font-size:16px;margin:0 0 12px}
+h3{font-size:14px;margin:0 0 10px;color:var(--mut);font-weight:600;text-transform:uppercase;letter-spacing:.03em}
+.btn{border:1px solid var(--bd);background:#fff;color:var(--tx);padding:7px 12px;border-radius:7px;cursor:pointer;font:inherit;white-space:nowrap}
+.btn:hover{background:#f2f4f6}
+.btn.p{background:var(--pri);border-color:var(--pri);color:#fff}
+.btn.p:hover{background:var(--pri-d)}
+.btn.wa{background:var(--wa);border-color:var(--wa);color:#fff}
+.btn.d{color:var(--err)}
+.btn.s{padding:4px 9px;font-size:13px}
+input,select,textarea{font:inherit;padding:7px 9px;border:1px solid #cfd5db;border-radius:7px;background:#fff;color:var(--tx);width:100%}
+textarea{resize:vertical}
+input:focus,select:focus,textarea:focus{outline:2px solid #9fd1c2;border-color:var(--pri)}
+label{display:block;font-size:12.5px;color:var(--mut);margin-bottom:3px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+.full{grid-column:1/-1}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:16px}
+.kpi{background:#fff;border:1px solid var(--bd);border-radius:10px;padding:14px}
+.kpi span{display:block;color:var(--mut);font-size:12.5px}
+.kpi b{font-size:21px;font-variant-numeric:tabular-nums}
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th,td{text-align:left;padding:8px 8px;border-bottom:1px solid var(--bd);vertical-align:middle}
+th{font-size:12px;color:var(--mut);font-weight:600;text-transform:uppercase;letter-spacing:.03em;background:#fafbfc}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+tr:hover td{background:#fafcfb}
+.tag{display:inline-block;padding:2px 8px;border-radius:20px;font-size:12px;font-weight:600}
+.t-ok{background:var(--ok2);color:var(--ok)}.t-ab{background:var(--warn2);color:var(--warn)}.t-at{background:var(--err2);color:var(--err)}.t-in{background:#eef0f3;color:var(--mut)}
+.acts{display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end}
+.empty{color:var(--mut);text-align:center;padding:28px 10px}
+.muted{color:var(--mut)}
+.hint{font-size:12.5px;color:var(--mut);margin-top:6px}
+#ov{position:fixed;inset:0;background:rgba(16,24,40,.45);display:none;align-items:flex-start;justify-content:center;padding:30px 12px;overflow:auto;z-index:10}
+#ov.on{display:flex}
+.mod{background:#fff;border-radius:12px;width:100%;max-width:640px;padding:20px;box-shadow:0 20px 50px rgba(0,0,0,.2)}
+.mod.wide{max-width:820px}
+.mod h2{margin-bottom:14px}
+.mod .foot{display:flex;gap:8px;justify-content:flex-end;margin-top:16px;flex-wrap:wrap}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1d2330;color:#fff;padding:10px 16px;border-radius:8px;z-index:20;opacity:0;transition:opacity .2s;pointer-events:none}
+.toast.on{opacity:1}
+.msgitem{border:1px solid var(--bd);border-radius:8px;padding:10px;margin-bottom:10px}
+.msgitem pre{white-space:pre-wrap;font:inherit;margin:6px 0 8px;background:#f7f9f8;padding:8px;border-radius:6px;max-height:160px;overflow:auto}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.chips code{background:#eef2f1;padding:2px 6px;border-radius:5px;font-size:12px;cursor:pointer}
+/* Recibo */
+.recibo{border:1.5px solid #333;padding:22px 26px;font-family:Georgia,"Times New Roman",serif;color:#111;background:#fff;margin-bottom:14px}
+.recibo .top{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:1px solid #999;padding-bottom:10px;margin-bottom:14px;gap:10px}
+.recibo .esc b{font-size:16px}
+.recibo .esc div{font-size:12px;color:#333}
+.recibo .num{text-align:right}
+.recibo .num .t{font-size:20px;font-weight:bold;letter-spacing:.08em}
+.recibo .num .v{font-size:17px;font-weight:bold;border:1.5px solid #333;padding:4px 10px;margin-top:6px;display:inline-block}
+.recibo p{font-size:14.5px;line-height:1.75;text-align:justify;margin:0 0 10px}
+.recibo .loc{text-align:right;margin:16px 0 34px}
+.recibo .ass{width:60%;margin:0 auto;border-top:1px solid #111;text-align:center;padding-top:5px;font-size:13px}
+.recibo .via{font-size:11px;color:#555;text-align:right;margin-top:10px;font-family:system-ui,sans-serif}
+.cut{border-top:1px dashed #888;margin:18px 0}
+#print{display:none}
+.hdrR{display:flex;align-items:center;gap:10px;font-size:12.5px;color:#d4ebe3}
+.hdrR button{background:rgba(255,255,255,.12);border:0;color:#fff;padding:5px 10px;border-radius:6px;cursor:pointer;font:inherit}
+#sync{padding:3px 8px;border-radius:20px;background:rgba(255,255,255,.12);white-space:nowrap}
+#sync.err,#sync.conf{background:#fee4e2;color:#b42318}
+body:not(.logado) #nav,body:not(.logado) .hdrR{display:none}
+.login{max-width:380px;margin:60px auto}
+.login .card{padding:24px}
+.login input{margin-bottom:12px}
+.login .msg{color:var(--err);font-size:13px;min-height:18px;margin-bottom:6px}
+.vers{display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--bd)}
+@media print{
+  body{background:#fff}
+  body>*:not(#print){display:none!important}
+  #print{display:block}
+  .recibo{page-break-inside:avoid}
+  @page{margin:14mm}
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>Controle de Honorários <small id="hdrEsc"></small></h1>
+  <nav id="nav">
+    <button data-t="painel">Painel</button>
+    <button data-t="honor">Honorários</button>
+    <button data-t="clientes">Clientes</button>
+    <button data-t="config">Configurações</button>
+  </nav>
+  <div class="hdrR"><span id="sync">✓ Salvo</span><span id="hdrUser"></span><button onclick="sair()">Sair</button></div>
+</header>
+<main id="app"></main>
+<div id="ov"><div class="mod" id="mod"></div></div>
+<div class="toast" id="toast"></div>
+<div id="print"></div>
+<input type="file" id="fileImp" accept=".json,application/json" style="display:none">
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+/* ================= Conexão com o Supabase =================
+   Preencha com os dados do seu projeto (Project Settings → API).
+   Se deixar em branco, o sistema pede esses dados na primeira vez que abrir. */
+const SUPABASE_URL='https://jfmmasdsfhfqrmlsxdgs.supabase.co';   // ex.: https://abcdefgh.supabase.co
+const SUPABASE_KEY='sb_publishable_rBentRdpnrARPBSbedFUtg_3jeXTEa5';   // chave "publishable" ou "anon public" (NUNCA a service_role / secret)
+
+/* ================= Dados ================= */
+const MESES=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+const TPL_PADRAO={
+  lembrete:"Olá, {cliente}! Tudo bem?\n\nPassando para lembrar que os honorários contábeis referentes a *{competencia}*, no valor de *{valor}*, vencem em *{vencimento}*.\n\nChave PIX: {pix}\n\nQualquer dúvida, estou à disposição.\n{escritorio}",
+  atraso:"Olá, {cliente}! Tudo bem?\n\nConsta em aberto o pagamento dos honorários contábeis de *{competencia}*, no valor de *{valor}*, com vencimento em *{vencimento}*.\n\nSe já pagou, por favor desconsidere esta mensagem e nos envie o comprovante. 🙏\n\nChave PIX: {pix}\n\n{escritorio}",
+  pago:"Olá, {cliente}! Confirmamos o recebimento dos honorários contábeis de *{competencia}*, no valor de *{valor}*, pago em {pagamento}.\n\nRecibo nº {recibo}.\n\nObrigado pela confiança!\n{escritorio}"
+};
+function blank(){return{config:{nome:'',doc:'',crc:'',resp:'',end:'',cidade:'',fone:'',email:'',pix:'',vencMesSeguinte:true,duasVias:true,tpl:{...TPL_PADRAO}},clientes:[],lanc:[],seq:1,ultBackup:null}}
+function normalize(d){const b=blank();if(!d||typeof d!=='object')return b;
+  const tpl=Object.assign({},TPL_PADRAO,(d.config&&d.config.tpl)||{});
+  d.config=Object.assign({},b.config,d.config||{});d.config.tpl=tpl;
+  return Object.assign(b,d)}
+let db=blank();
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+
+/* ================= Sincronização ================= */
+let sb=null,userId=null,rev=0,salvando=false,pendente=false,erroRede=false,conflito=false,timer=null;
+function sbCfg(){if(SUPABASE_URL&&SUPABASE_KEY)return{url:SUPABASE_URL,key:SUPABASE_KEY,fixo:true};
+  try{return JSON.parse(localStorage.getItem('honorarios_sb')||'null')}catch(e){return null}}
+function setSync(s){const el=document.getElementById('sync');if(!el)return;el.className=s;
+  el.textContent={ok:'✓ Salvo na nuvem',pend:'Alterações pendentes…',saving:'Salvando…',err:'⚠ Sem conexão — tentando de novo',conf:'⚠ Conflito de versões'}[s]||s}
+function save(){pendente=true;setSync('pend');clearTimeout(timer);timer=setTimeout(push,700)}
+async function push(){
+  if(salvando||conflito||!userId)return;salvando=true;pendente=false;erroRede=false;setSync('saving');
+  try{
+    if(rev===0){const r=await sb.from('honorarios').insert({user_id:userId,data:db,rev:1}).select('rev');
+      if(r.error){if(r.error.code==='23505'){await onConflict();return}throw r.error}rev=1}
+    else{const r=await sb.from('honorarios').update({data:db,rev:rev+1,updated_at:new Date().toISOString()}).eq('user_id',userId).eq('rev',rev).select('rev');
+      if(r.error)throw r.error;if(!r.data.length){await onConflict();return}rev++}
+    if(!pendente)setSync('ok');
+  }catch(e){console.error(e);pendente=true;erroRede=true;setSync('err')}
+  finally{salvando=false;if(pendente&&!conflito){clearTimeout(timer);timer=setTimeout(push,erroRede?5000:300)}}}
+async function onConflict(){conflito=true;setSync('conf');
+  const usarServidor=confirm('Os dados foram alterados em outro aparelho ou aba depois que você abriu o sistema aqui.\n\nOK = carregar a versão mais recente da nuvem (sua última alteração nesta tela será descartada).\nCancelar = manter o que está nesta tela e sobrescrever a versão da nuvem.');
+  const {data,error}=await sb.from('honorarios').select('data,rev').eq('user_id',userId).maybeSingle();
+  if(error){alert('Erro ao consultar a nuvem: '+error.message);location.reload();return}
+  if(usarServidor){db=normalize(data&&data.data);rev=data?data.rev:0;pendente=false;conflito=false;setSync('ok');render();toast('Versão da nuvem carregada.')}
+  else{rev=data?data.rev:0;conflito=false;pendente=true;setTimeout(push,100)}}
+window.addEventListener('beforeunload',e=>{if(pendente||salvando){e.preventDefault();e.returnValue=''}});
+document.addEventListener('visibilitychange',async()=>{
+  if(document.visibilityState!=='visible'||!userId||pendente||salvando||conflito)return;
+  const {data}=await sb.from('honorarios').select('data,rev').eq('user_id',userId).maybeSingle();
+  if(data&&data.rev>rev&&!pendente&&!salvando){db=normalize(data.data);rev=data.rev;render();toast('Dados atualizados com alterações de outro aparelho.')}});
+
+/* ================= Login ================= */
+async function boot(){
+  const cfg=sbCfg();if(!cfg){telaConexao();return}
+  if(!window.supabase){$('#app').innerHTML='<div class="login"><div class="card">Não foi possível carregar o Supabase. Verifique sua internet e recarregue a página.</div></div>';return}
+  try{sb=window.supabase.createClient(cfg.url,cfg.key)}catch(e){alert('Endereço ou chave do Supabase inválidos.');localStorage.removeItem('honorarios_sb');telaConexao();return}
+  const {data:{session}}=await sb.auth.getSession();
+  if(session)await iniciar(session.user);else telaLogin()}
+function telaConexao(){
+  $('#app').innerHTML=`<div class="login"><div class="card"><h2>Conectar ao Supabase</h2>
+  <p class="muted" style="margin-top:-6px">Copie em Project Settings → API do seu projeto. Isso fica salvo só neste navegador.</p>
+  <label>Project URL</label><input id="sUrl" placeholder="https://xxxx.supabase.co">
+  <label>Chave publishable (ou anon public)</label><input id="sKey">
+  <div class="hint" style="margin:-6px 0 12px">Nunca use a chave secret / service_role aqui.</div>
+  <button class="btn p" style="width:100%" onclick="salvarConexao()">Conectar</button></div></div>`}
+function salvarConexao(){const url=$('#sUrl').value.trim().replace(/\/+$/,''),key=$('#sKey').value.trim();
+  if(!/^https:\/\/.+/.test(url)||!key){alert('Preencha a URL (começando com https://) e a chave.');return}
+  localStorage.setItem('honorarios_sb',JSON.stringify({url,key}));boot()}
+function telaLogin(){const cfg=sbCfg();
+  $('#app').innerHTML=`<div class="login"><div class="card"><h2>Controle de Honorários</h2>
+  <form onsubmit="entrar();return false"><label>E-mail</label><input id="lEmail" type="email" autocomplete="username" required>
+  <label>Senha</label><input id="lSenha" type="password" autocomplete="current-password" required>
+  <div class="msg" id="lMsg"></div><button class="btn p" style="width:100%" id="lBtn">Entrar</button></form>
+  ${cfg&&!cfg.fixo?`<p class="hint" style="text-align:center;margin-top:14px"><a href="#" onclick="localStorage.removeItem('honorarios_sb');location.reload();return false">Trocar projeto Supabase</a></p>`:''}
+  </div></div>`;$('#lEmail').focus()}
+async function entrar(){const btn=$('#lBtn');btn.disabled=true;btn.textContent='Entrando…';$('#lMsg').textContent='';
+  const {data,error}=await sb.auth.signInWithPassword({email:$('#lEmail').value.trim(),password:$('#lSenha').value});
+  if(error){btn.disabled=false;btn.textContent='Entrar';$('#lMsg').textContent=/invalid/i.test(error.message)?'E-mail ou senha incorretos.':error.message;return}
+  await iniciar(data.user)}
+async function iniciar(user){
+  userId=user.id;$('#app').innerHTML='<div class="empty">Carregando dados…</div>';
+  const {data,error}=await sb.from('honorarios').select('data,rev').eq('user_id',userId).maybeSingle();
+  if(error){$('#app').innerHTML=`<div class="login"><div class="card"><h2>Erro ao carregar</h2><p>${esc(error.message)}</p><p class="muted">Confira se você rodou o script <b>supabase.sql</b> no SQL Editor do projeto.</p><button class="btn" onclick="sair()">Sair</button></div></div>`;return}
+  if(data){db=normalize(data.data);rev=data.rev}else{db=blank();rev=0}
+  $('#hdrUser').textContent=user.email;document.body.classList.add('logado');render();setSync('ok')}
+async function sair(){if(pendente||salvando){if(!confirm('Ainda há alterações sendo salvas. Sair mesmo assim?'))return}
+  await sb.auth.signOut();location.reload()}
+
+/* ================= Versões salvas (histórico na nuvem) ================= */
+async function carregarVersoes(){const el=$('#versoes');if(!el)return;
+  const {data,error}=await sb.from('honorarios_historico').select('id,rev,salvo_em').eq('user_id',userId).order('salvo_em',{ascending:false}).limit(40);
+  if(error){el.innerHTML='<span class="muted">Não foi possível listar as versões: '+esc(error.message)+'</span>';return}
+  el.innerHTML=data.length?data.map(v=>`<div class="vers"><span>${new Date(v.salvo_em).toLocaleString('pt-BR')}</span><span class="muted">rev. ${v.rev}</span><span class="sp"></span><button class="btn s" onclick="restaurarVersao(${v.id})">Restaurar</button></div>`).join('')
+    :'<span class="muted">Nenhuma versão anterior ainda. Elas aparecem conforme você usa o sistema (no máximo uma por hora).</span>'}
+async function restaurarVersao(id){
+  if(!confirm('Restaurar esta versão? Os dados atuais serão substituídos por ela.\n\nDica: baixe um backup antes, por segurança.'))return;
+  const {data,error}=await sb.from('honorarios_historico').select('data').eq('id',id).single();
+  if(error){alert(error.message);return}db=normalize(data.data);save();render();toast('Versão restaurada.')}
+
+/* ================= Utilidades ================= */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const brl=v=>(Number(v)||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+function parseMoney(s){s=String(s??'').replace(/[R$\s]/g,'');if(s.includes(','))s=s.replace(/\./g,'').replace(',','.');const n=parseFloat(s);return isNaN(n)?0:Math.round(n*100)/100}
+const moneyIn=v=>(Number(v)||0).toFixed(2).replace('.',',');
+const pad=n=>String(n).padStart(2,'0');
+function hoje(){const d=new Date();return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())}
+function compAtual(){return hoje().slice(0,7)}
+function fmtData(iso){if(!iso)return'';const[y,m,d]=iso.split('-');return d+'/'+m+'/'+y}
+function fmtComp(c){if(!c)return'';const[y,m]=c.split('-');return MESES[+m-1]+'/'+y}
+function dataExtenso(iso){const[y,m,d]=iso.split('-');return (+d)+' de '+MESES[+m-1]+' de '+y}
+function calcVenc(comp,dia){let[y,m]=comp.split('-').map(Number);if(db.config.vencMesSeguinte){m++;if(m>12){m=1;y++}}
+  const ult=new Date(y,m,0).getDate();const d=Math.min(Math.max(+dia||10,1),ult);return y+'-'+pad(m)+'-'+pad(d)}
+const recNum=n=>String(n).padStart(4,'0');
+function soDigitos(s){return String(s||'').replace(/\D/g,'')}
+function waNum(f){let d=soDigitos(f);if(!d)return'';if(d.length<=11)d='55'+d;return d}
+function cli(id){return db.clientes.find(c=>c.id===id)||{nome:'(cliente excluído)'}}
+function status(l){if(l.status==='pago')return'pago';return l.venc<hoje()?'atrasado':'aberto'}
+function tagStatus(l){const s=status(l);return s==='pago'?'<span class="tag t-ok">Pago</span>':s==='atrasado'?'<span class="tag t-at">Atrasado</span>':'<span class="tag t-ab">Em aberto</span>'}
+function toast(t){const el=$('#toast');el.textContent=t;el.classList.add('on');clearTimeout(el._t);el._t=setTimeout(()=>el.classList.remove('on'),2200)}
+async function copiar(txt){
+  try{await navigator.clipboard.writeText(txt);toast('Mensagem copiada! Agora é só colar no WhatsApp.')}
+  catch(e){const ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();try{document.execCommand('copy');toast('Mensagem copiada!')}catch(_){alert('Não consegui copiar automaticamente. Selecione o texto e copie com Ctrl+C.')}ta.remove()}}
+
+/* Valor por extenso */
+const UN=['','um','dois','três','quatro','cinco','seis','sete','oito','nove','dez','onze','doze','treze','quatorze','quinze','dezesseis','dezessete','dezoito','dezenove'];
+const DZ=['','','vinte','trinta','quarenta','cinquenta','sessenta','setenta','oitenta','noventa'];
+const CT=['','cento','duzentos','trezentos','quatrocentos','quinhentos','seiscentos','setecentos','oitocentos','novecentos'];
+function ate999(n){if(!n)return'';if(n===100)return'cem';const c=Math.floor(n/100),r=n%100,p=[];if(c)p.push(CT[c]);
+  if(r){if(r<20)p.push(UN[r]);else{const d=Math.floor(r/10),u=r%10;p.push(u?DZ[d]+' e '+UN[u]:DZ[d])}}return p.join(' e ')}
+function inteiroExt(n){if(!n)return'zero';const mi=Math.floor(n/1e6),mil=Math.floor(n%1e6/1000),r=n%1000,p=[];
+  if(mi)p.push(mi===1?'um milhão':ate999(mi)+' milhões');if(mil)p.push(mil===1?'mil':ate999(mil)+' mil');
+  if(r)p.push(ate999(r));if(p.length<2)return p.join('');const last=p.pop();const sep=(r&&(r<100||r%100===0))?' e ':' ';return p.join(' ')+sep+last}
+function extenso(v){v=Math.round((Number(v)||0)*100);const re=Math.floor(v/100),ce=v%100;let s='';
+  if(re){s=inteiroExt(re);const mi=Math.floor(re/1e6);s+=(mi&&re%1e6===0)?' de reais':re===1?' real':' reais'}
+  if(ce){s+=(s?' e ':'')+ate999(ce)+(ce===1?' centavo':' centavos')}return s||'zero real'}
+
+/* ================= Navegação ================= */
+let tab='painel',fComp=compAtual(),fStatus='todos',fBusca='',pComp=compAtual(),cBusca='',cAtivos='ativos';
+document.querySelectorAll('#nav button').forEach(b=>b.onclick=()=>{tab=b.dataset.t;render()});
+function render(){
+  document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.t===tab));
+  $('#hdrEsc').textContent=db.config.nome?'· '+db.config.nome:'';
+  ({painel:rPainel,honor:rHonor,clientes:rClientes,config:rConfig})[tab]()}
+
+/* ================= Painel ================= */
+function rPainel(){
+  const ls=db.lanc.filter(l=>l.comp===pComp);
+  const prev=ls.reduce((a,l)=>a+l.valor,0),rec=ls.filter(l=>l.status==='pago').reduce((a,l)=>a+(l.valorPago??l.valor),0);
+  const aberto=ls.filter(l=>l.status!=='pago').reduce((a,l)=>a+l.valor,0);
+  const atr=db.lanc.filter(l=>status(l)==='atrasado').sort((a,b)=>a.venc.localeCompare(b.venc));
+  const totAtr=atr.reduce((a,l)=>a+l.valor,0);
+  const ativos=db.clientes.filter(c=>c.ativo).length;
+  const semGerar=db.clientes.filter(c=>c.ativo&&!db.lanc.some(l=>l.cli===c.id&&l.comp===pComp&&!l.avulso)).length;
+  const prox=db.lanc.filter(l=>status(l)==='aberto').sort((a,b)=>a.venc.localeCompare(b.venc)).slice(0,8);
+  let aviso='';
+  if(!db.config.nome)aviso+=`<div class="card" style="border-color:#f5c26b;background:#fffaeb">👋 Comece em <b>Configurações</b> com os dados do escritório (aparecem no recibo e nas mensagens) e depois cadastre seus clientes.</div>`;
+  const dias=db.ultBackup?Math.floor((Date.now()-new Date(db.ultBackup))/864e5):null;
+  if(db.clientes.length&&(dias===null||dias>=7))aviso+=`<div class="card" style="border-color:#f5c26b;background:#fffaeb" class="row">💾 ${dias===null?'Você ainda não fez nenhum backup.':'Último backup há '+dias+' dias.'} Os dados estão na nuvem, mas uma cópia sua é a garantia extra — <a href="#" onclick="exportar();return false">baixar backup agora</a>.</div>`;
+  $('#app').innerHTML=aviso+`
+  <div class="row" style="margin-bottom:14px"><h2 style="margin:0">Resumo da competência</h2><input type="month" value="${pComp}" style="width:auto" onchange="pComp=this.value;rPainel()"><span class="sp"></span>
+  ${semGerar?`<button class="btn p" onclick="gerarMes('${pComp}')">Gerar honorários de ${fmtComp(pComp)} (${semGerar})</button>`:''}</div>
+  <div class="kpis">
+    <div class="kpi"><span>Previsto em ${fmtComp(pComp)}</span><b>${brl(prev)}</b></div>
+    <div class="kpi"><span>Recebido</span><b style="color:var(--ok)">${brl(rec)}</b></div>
+    <div class="kpi"><span>Em aberto</span><b style="color:var(--warn)">${brl(aberto)}</b></div>
+    <div class="kpi"><span>Atrasados (todas as competências)</span><b style="color:var(--err)">${brl(totAtr)}</b><span>${atr.length} lançamento(s)</span></div>
+    <div class="kpi"><span>Clientes ativos</span><b>${ativos}</b></div>
+  </div>
+  <div class="card"><div class="row" style="margin-bottom:8px"><h3 style="margin:0">Em atraso</h3><span class="sp"></span>${atr.length?`<button class="btn s wa" onclick="lote('atraso')">Avisos de atraso em lote</button>`:''}</div>
+  ${tabelaLanc(atr,'Nenhum honorário em atraso. 🎉')}</div>
+  <div class="card"><h3>Próximos vencimentos</h3>${tabelaLanc(prox,'Nada em aberto por enquanto.')}</div>`}
+
+/* ================= Honorários ================= */
+function rHonor(){
+  let ls=db.lanc.filter(l=>!fComp||l.comp===fComp);
+  if(fStatus!=='todos')ls=ls.filter(l=>status(l)===fStatus);
+  if(fBusca){const b=fBusca.toLowerCase();ls=ls.filter(l=>cli(l.cli).nome.toLowerCase().includes(b))}
+  ls.sort((a,b)=>cli(a.cli).nome.localeCompare(cli(b.cli).nome)||a.venc.localeCompare(b.venc));
+  const tot=ls.reduce((a,l)=>a+l.valor,0);
+  $('#app').innerHTML=`<div class="card">
+  <div class="row" style="margin-bottom:12px">
+    <div><label>Competência</label><input type="month" value="${fComp}" onchange="fComp=this.value;rHonor()" style="width:auto"></div>
+    <div><label>Situação</label><select onchange="fStatus=this.value;rHonor()" style="width:auto">
+      ${[['todos','Todas'],['aberto','Em aberto'],['atrasado','Atrasado'],['pago','Pago']].map(([v,t])=>`<option value="${v}"${fStatus===v?' selected':''}>${t}</option>`).join('')}</select></div>
+    <div style="min-width:200px;flex:1"><label>Buscar cliente</label><input id="hb" value="${esc(fBusca)}" placeholder="Nome..." oninput="fBusca=this.value;rHonor();const e=$('#hb');e.focus();e.setSelectionRange(e.value.length,e.value.length)"></div>
+  </div>
+  <div class="row">
+    ${fComp?`<button class="btn p" onclick="gerarMes('${fComp}')">Gerar honorários de ${fmtComp(fComp)}</button>`:''}
+    <button class="btn" onclick="formLanc()">+ Lançamento avulso</button>
+    ${fComp?`<button class="btn wa" onclick="lote('lembrete')">Lembretes do mês em lote</button>`:''}
+    <span class="sp"></span><span class="muted">${ls.length} lançamento(s) · ${brl(tot)}</span>
+  </div></div>
+  <div class="card">${tabelaLanc(ls,fComp&&!db.lanc.some(l=>l.comp===fComp)?`Nenhum honorário gerado para ${fmtComp(fComp)}. Clique em <b>Gerar honorários</b> para criar os lançamentos de todos os clientes ativos.`:'Nenhum lançamento encontrado.')}</div>`}
+
+function tabelaLanc(ls,vazio){
+  if(!ls.length)return`<div class="empty">${vazio}</div>`;
+  return`<div class="tw"><table><thead><tr><th>Cliente</th><th>Competência</th><th>Vencimento</th><th class="n">Valor</th><th>Situação</th><th style="text-align:right">Ações</th></tr></thead><tbody>
+  ${ls.map(l=>{const c=cli(l.cli),pago=l.status==='pago';return`<tr>
+    <td><b>${esc(c.nome)}</b>${l.desc?`<div class="muted" style="font-size:12px">${esc(l.desc)}</div>`:''}</td>
+    <td>${fmtComp(l.comp)}</td><td>${fmtData(l.venc)}</td><td class="n">${brl(l.valor)}</td>
+    <td>${tagStatus(l)}${pago?`<div class="muted" style="font-size:12px">${fmtData(l.pagoEm)} · Rec. ${recNum(l.recibo)}</div>`:''}</td>
+    <td><div class="acts">
+      ${pago?`<button class="btn s" onclick="verRecibo('${l.id}')">🧾 Recibo</button>`:`<button class="btn s p" onclick="formPagar('${l.id}')">Receber</button>`}
+      <button class="btn s wa" onclick="msg('${l.id}')">WhatsApp</button>
+      <button class="btn s" title="Editar" onclick="formLanc('${l.id}')">✏️</button>
+      <button class="btn s d" title="Excluir" onclick="delLanc('${l.id}')">🗑</button>
+    </div></td></tr>`}).join('')}</tbody></table></div>`}
+
+function gerarMes(comp){
+  const ativos=db.clientes.filter(c=>c.ativo);
+  if(!ativos.length){alert('Cadastre clientes ativos primeiro.');return}
+  let n=0;ativos.forEach(c=>{if(!db.lanc.some(l=>l.cli===c.id&&l.comp===comp&&!l.avulso)){
+    db.lanc.push({id:uid(),cli:c.id,comp,valor:c.valor,venc:calcVenc(comp,c.dia),desc:'',status:'aberto'});n++}});
+  save();toast(n?`${n} honorário(s) gerado(s) para ${fmtComp(comp)}.`:'Todos os clientes ativos já têm honorário nesta competência.');render()}
+
+function formLanc(id){
+  const l=id?db.lanc.find(x=>x.id===id):null;
+  const clis=db.clientes.filter(c=>c.ativo||(l&&c.id===l.cli)).sort((a,b)=>a.nome.localeCompare(b.nome));
+  if(!clis.length){alert('Cadastre um cliente primeiro.');return}
+  const comp=l?l.comp:(fComp||compAtual());
+  modal(`<h2>${l?'Editar lançamento':'Lançamento avulso'}</h2>
+  <div class="grid">
+    <div class="full"><label>Cliente</label><select id="lCli" ${l?'disabled':''} onchange="lAuto()">${clis.map(c=>`<option value="${c.id}"${l&&l.cli===c.id?' selected':''}>${esc(c.nome)}</option>`).join('')}</select></div>
+    <div><label>Competência</label><input type="month" id="lComp" value="${comp}" onchange="lAuto()"></div>
+    <div><label>Vencimento</label><input type="date" id="lVenc" value="${l?l.venc:''}"></div>
+    <div><label>Valor (R$)</label><input id="lVal" inputmode="decimal" value="${l?moneyIn(l.valor):''}"></div>
+    <div class="full"><label>Descrição (opcional — aparece no recibo)</label><input id="lDesc" value="${esc(l?l.desc:'')}" placeholder="Ex.: Declaração de IRPF, 13º salário, abertura de empresa..."></div>
+  </div>
+  <div class="foot"><button class="btn" onclick="fechar()">Cancelar</button><button class="btn p" onclick="salvarLanc('${id||''}')">Salvar</button></div>`);
+  if(!l)lAuto()}
+function lAuto(){const c=cli($('#lCli').value);if(!$('#lVal').dataset.t){$('#lVal').value=moneyIn(c.valor)}$('#lVenc').value=calcVenc($('#lComp').value||compAtual(),c.dia)}
+function salvarLanc(id){
+  const v=parseMoney($('#lVal').value),comp=$('#lComp').value,venc=$('#lVenc').value;
+  if(!comp||!venc||v<=0){alert('Preencha competência, vencimento e valor.');return}
+  if(id){const l=db.lanc.find(x=>x.id===id);Object.assign(l,{comp,venc,valor:v,desc:$('#lDesc').value.trim()})}
+  else db.lanc.push({id:uid(),cli:$('#lCli').value,comp,venc,valor:v,desc:$('#lDesc').value.trim(),status:'aberto',avulso:true});
+  save();fechar();render();toast('Lançamento salvo.')}
+function delLanc(id){const l=db.lanc.find(x=>x.id===id);
+  if(!confirm(`Excluir o lançamento de ${cli(l.cli).nome} (${fmtComp(l.comp)})?${l.status==='pago'?'\n\nAtenção: ele já foi pago e tem recibo emitido.':''}`))return;
+  db.lanc=db.lanc.filter(x=>x.id!==id);save();render()}
+
+function formPagar(id){const l=db.lanc.find(x=>x.id===id),c=cli(l.cli);
+  modal(`<h2>Registrar recebimento</h2><p class="muted" style="margin-top:-6px">${esc(c.nome)} · ${fmtComp(l.comp)}</p>
+  <div class="grid">
+    <div><label>Data do pagamento</label><input type="date" id="pData" value="${hoje()}"></div>
+    <div><label>Valor recebido (R$)</label><input id="pVal" inputmode="decimal" value="${moneyIn(l.valor)}"></div>
+    <div><label>Forma de pagamento</label><select id="pForma">${['PIX','Dinheiro','Transferência','Boleto','Cartão','Cheque'].map(f=>`<option>${f}</option>`).join('')}</select></div>
+  </div>
+  <div class="foot"><button class="btn" onclick="fechar()">Cancelar</button><button class="btn p" onclick="pagar('${id}')">Confirmar e gerar recibo</button></div>`)}
+function pagar(id){const l=db.lanc.find(x=>x.id===id),v=parseMoney($('#pVal').value);
+  if(!$('#pData').value||v<=0){alert('Informe data e valor.');return}
+  Object.assign(l,{status:'pago',pagoEm:$('#pData').value,valorPago:v,forma:$('#pForma').value});
+  if(!l.recibo){l.recibo=db.seq++}
+  save();render();verRecibo(id)}
+function estornar(id){if(!confirm('Desfazer este pagamento? O lançamento volta para "em aberto" (o número do recibo fica reservado).'))return;
+  const l=db.lanc.find(x=>x.id===id);l.status='aberto';delete l.pagoEm;delete l.valorPago;delete l.forma;save();fechar();render()}
+
+/* ================= Recibo ================= */
+function reciboHTML(l,via){const c=cli(l.cli),e=db.config,v=l.valorPago??l.valor;
+  const ref=l.desc?`a ${esc(l.desc)} (competência ${fmtComp(l.comp)})`:`aos honorários contábeis da competência de <b>${fmtComp(l.comp)}</b>`;
+  return`<div class="recibo">
+  <div class="top"><div class="esc"><b>${esc(e.nome||'Seu Escritório Contábil')}</b>
+    ${e.doc?`<div>CPF/CNPJ: ${esc(e.doc)}${e.crc?' · CRC: '+esc(e.crc):''}</div>`:e.crc?`<div>CRC: ${esc(e.crc)}</div>`:''}
+    ${e.end?`<div>${esc(e.end)}${e.cidade?' — '+esc(e.cidade):''}</div>`:''}
+    ${(e.fone||e.email)?`<div>${esc([e.fone,e.email].filter(Boolean).join(' · '))}</div>`:''}</div>
+  <div class="num"><div class="t">RECIBO</div><div>Nº ${recNum(l.recibo)}</div><div class="v">${brl(v)}</div></div></div>
+  <p>Recebi(emos) de <b>${esc(c.nome)}</b>${c.doc?`, inscrito(a) no CPF/CNPJ sob o nº <b>${esc(c.doc)}</b>`:''}, a importância de <b>${brl(v)}</b> (${extenso(v)}), referente ${ref}${!l.desc&&c.servicos?`, compreendendo: ${esc(c.servicos)}`:''}.</p>
+  <p>Forma de pagamento: ${esc(l.forma||'—')}. Para clareza, firmo(amos) o presente recibo, dando plena e geral quitação do valor acima.</p>
+  <div class="loc">${esc((e.cidade||'').split('/')[0].split('-')[0].trim()||'_______________')}, ${dataExtenso(l.pagoEm)}.</div>
+  <div class="ass"><b>${esc(e.resp||e.nome||'Responsável')}</b>${e.crc?`<br>CRC ${esc(e.crc)}`:''}${e.resp&&e.nome?`<br>${esc(e.nome)}`:''}</div>
+  ${via?`<div class="via">${via}</div>`:''}</div>`}
+function verRecibo(id){const l=db.lanc.find(x=>x.id===id);
+  modal(`<h2>Recibo nº ${recNum(l.recibo)}</h2>${reciboHTML(l)}
+  <label style="display:flex;gap:6px;align-items:center;color:var(--tx)"><input type="checkbox" id="rVias" style="width:auto" ${db.config.duasVias?'checked':''} onchange="db.config.duasVias=this.checked;save()"> Imprimir em 2 vias (cliente e escritório) na mesma folha</label>
+  <div class="foot"><button class="btn d" onclick="estornar('${id}')">Desfazer pagamento</button><span class="sp"></span>
+  <button class="btn wa" onclick="msg('${id}','pago')">Aviso de pagamento</button>
+  <button class="btn" onclick="fechar()">Fechar</button><button class="btn p" onclick="imprimir('${id}')">🖨 Imprimir / Salvar PDF</button></div>`,true)}
+function imprimir(id){const l=db.lanc.find(x=>x.id===id);
+  $('#print').innerHTML=db.config.duasVias?reciboHTML(l,'1ª via — Cliente')+'<div class="cut"></div>'+reciboHTML(l,'2ª via — Escritório'):reciboHTML(l);
+  const t=document.title;document.title=`Recibo ${recNum(l.recibo)} - ${cli(l.cli).nome}`;window.print();document.title=t}
+
+/* ================= WhatsApp ================= */
+function preencher(tpl,l){const c=cli(l.cli),e=db.config;
+  const map={cliente:c.contato||c.nome,empresa:c.nome,competencia:fmtComp(l.comp),valor:brl(l.status==='pago'?(l.valorPago??l.valor):l.valor),vencimento:fmtData(l.venc),
+    pix:e.pix||'(cadastre sua chave PIX em Configurações)',escritorio:[e.resp,e.nome].filter(Boolean).join('\n'),recibo:l.recibo?recNum(l.recibo):'',pagamento:fmtData(l.pagoEm||''),descricao:l.desc||''};
+  return tpl.replace(/\{(\w+)\}/g,(m,k)=>k in map?map[k]:m)}
+function tipoPadrao(l){const s=status(l);return s==='pago'?'pago':s==='atrasado'?'atraso':'lembrete'}
+function msg(id,tipo){const l=db.lanc.find(x=>x.id===id),c=cli(l.cli);tipo=tipo||tipoPadrao(l);
+  modal(`<h2>Mensagem para WhatsApp</h2><p class="muted" style="margin-top:-6px">${esc(c.nome)}${c.whats?' · '+esc(c.whats):' · <span style="color:var(--err)">sem WhatsApp cadastrado</span>'}</p>
+  <label>Modelo</label><select id="mTipo" onchange="$('#mTxt').value=preencher(db.config.tpl[this.value],db.lanc.find(x=>x.id==='${id}'))" style="margin-bottom:10px">
+  ${[['lembrete','Lembrete de vencimento'],['atraso','Cobrança em atraso'],['pago','Confirmação de pagamento']].map(([v,t])=>`<option value="${v}"${v===tipo?' selected':''}>${t}</option>`).join('')}</select>
+  <label>Texto (pode editar antes de copiar)</label><textarea id="mTxt" rows="11">${esc(preencher(db.config.tpl[tipo],l))}</textarea>
+  <div class="foot"><button class="btn" onclick="fechar()">Fechar</button>
+  ${c.whats?`<button class="btn" onclick="abrirWa('${esc(c.whats)}',$('#mTxt').value)">Abrir conversa no WhatsApp</button>`:''}
+  <button class="btn wa" onclick="copiar($('#mTxt').value)">📋 Copiar mensagem</button></div>`)}
+function abrirWa(f,txt){const n=waNum(f);if(!n){alert('Número inválido.');return}window.open('https://wa.me/'+n+'?text='+encodeURIComponent(txt),'_blank')}
+function lote(tipo){
+  let ls=tipo==='atraso'?db.lanc.filter(l=>status(l)==='atrasado'):db.lanc.filter(l=>l.comp===fComp&&l.status!=='pago');
+  ls.sort((a,b)=>cli(a.cli).nome.localeCompare(cli(b.cli).nome));
+  if(!ls.length){alert('Nenhum lançamento em aberto para gerar mensagens.');return}
+  window._lote=ls.map(l=>({l,t:preencher(db.config.tpl[tipo==='atraso'?'atraso':tipoPadrao(l)],l)}));
+  modal(`<h2>${tipo==='atraso'?'Avisos de atraso':'Lembretes de '+fmtComp(fComp)} (${ls.length})</h2>
+  <p class="muted" style="margin-top:-6px">Copie cada mensagem e cole na conversa do cliente. Os que já estão atrasados recebem o modelo de cobrança.</p>
+  ${window._lote.map((x,i)=>{const c=cli(x.l.cli);return`<div class="msgitem"><div class="row"><b>${esc(c.nome)}</b>${tagStatus(x.l)}<span class="sp"></span><span class="muted">${esc(c.whats||'sem WhatsApp')}</span></div>
+  <pre>${esc(x.t)}</pre><div class="row"><button class="btn s wa" onclick="copiar(_lote[${i}].t);this.textContent='✓ Copiada'">📋 Copiar</button>
+  ${c.whats?`<button class="btn s" onclick="abrirWa('${esc(c.whats)}',_lote[${i}].t)">Abrir no WhatsApp</button>`:''}</div></div>`}).join('')}
+  <div class="foot"><button class="btn" onclick="fechar()">Fechar</button></div>`,true)}
+
+/* ================= Clientes ================= */
+function rClientes(){
+  let cs=db.clientes.slice();
+  if(cAtivos==='ativos')cs=cs.filter(c=>c.ativo);else if(cAtivos==='inativos')cs=cs.filter(c=>!c.ativo);
+  if(cBusca){const b=cBusca.toLowerCase();cs=cs.filter(c=>(c.nome+' '+(c.doc||'')+' '+(c.contato||'')).toLowerCase().includes(b))}
+  cs.sort((a,b)=>a.nome.localeCompare(b.nome));
+  const totMensal=db.clientes.filter(c=>c.ativo).reduce((a,c)=>a+c.valor,0);
+  $('#app').innerHTML=`<div class="card"><div class="row">
+    <input id="cb" placeholder="Buscar por nome, CPF/CNPJ..." value="${esc(cBusca)}" style="max-width:320px" oninput="cBusca=this.value;rClientes();const e=$('#cb');e.focus();e.setSelectionRange(e.value.length,e.value.length)">
+    <select style="width:auto" onchange="cAtivos=this.value;rClientes()">${[['ativos','Ativos'],['inativos','Inativos'],['todos','Todos']].map(([v,t])=>`<option value="${v}"${cAtivos===v?' selected':''}>${t}</option>`).join('')}</select>
+    <span class="sp"></span><span class="muted">Carteira mensal: <b>${brl(totMensal)}</b></span>
+    <button class="btn p" onclick="formCli()">+ Novo cliente</button></div></div>
+  <div class="card">${!cs.length?`<div class="empty">${db.clientes.length?'Nenhum cliente encontrado.':'Nenhum cliente cadastrado ainda. Clique em <b>+ Novo cliente</b>.'}</div>`:
+  `<div class="tw"><table><thead><tr><th>Cliente</th><th>CPF/CNPJ</th><th>WhatsApp</th><th class="n">Honorário</th><th>Venc.</th><th>Situação</th><th style="text-align:right">Ações</th></tr></thead><tbody>
+  ${cs.map(c=>{const ab=db.lanc.filter(l=>l.cli===c.id&&status(l)==='atrasado').length;return`<tr>
+  <td><b>${esc(c.nome)}</b>${c.contato?`<div class="muted" style="font-size:12px">Contato: ${esc(c.contato)}</div>`:''}</td><td>${esc(c.doc)}</td><td>${esc(c.whats)}</td>
+  <td class="n">${brl(c.valor)}</td><td>dia ${c.dia}</td>
+  <td>${c.ativo?'<span class="tag t-ok">Ativo</span>':'<span class="tag t-in">Inativo</span>'}${ab?` <span class="tag t-at">${ab} atrasado(s)</span>`:''}</td>
+  <td><div class="acts"><button class="btn s" onclick="histCli('${c.id}')">Histórico</button><button class="btn s" onclick="formCli('${c.id}')">✏️</button><button class="btn s d" onclick="delCli('${c.id}')">🗑</button></div></td></tr>`}).join('')}
+  </tbody></table></div>`}</div>`}
+function formCli(id){const c=id?db.clientes.find(x=>x.id===id):{ativo:true,dia:10};
+  modal(`<h2>${id?'Editar cliente':'Novo cliente'}</h2><div class="grid">
+  <div class="full"><label>Nome / Razão social *</label><input id="cNome" value="${esc(c.nome)}"></div>
+  <div><label>CPF / CNPJ</label><input id="cDoc" value="${esc(c.doc)}"></div>
+  <div><label>Nome do contato (usado na mensagem)</label><input id="cCont" value="${esc(c.contato)}" placeholder="Ex.: João"></div>
+  <div><label>WhatsApp (com DDD)</label><input id="cWa" value="${esc(c.whats)}" placeholder="(87) 99999-9999"></div>
+  <div><label>E-mail</label><input id="cMail" value="${esc(c.email)}"></div>
+  <div><label>Honorário mensal (R$) *</label><input id="cVal" inputmode="decimal" value="${c.valor!=null?moneyIn(c.valor):''}"></div>
+  <div><label>Dia de vencimento</label><input id="cDia" type="number" min="1" max="31" value="${c.dia||10}"></div>
+  <div><label>Regime / Tipo</label><select id="cReg">${['','MEI','Simples Nacional','Lucro Presumido','Lucro Real','Pessoa Física','Outro'].map(r=>`<option${c.regime===r?' selected':''}>${r}</option>`).join('')}</select></div>
+  <div><label>Situação</label><select id="cAt"><option value="1"${c.ativo?' selected':''}>Ativo</option><option value="0"${!c.ativo?' selected':''}>Inativo</option></select></div>
+  <div class="full"><label>Serviços incluídos (aparece no recibo)</label><input id="cServ" value="${esc(c.servicos)}" placeholder="Ex.: escrituração fiscal, contábil e folha de pagamento"></div>
+  <div class="full"><label>Observações</label><textarea id="cObs" rows="2">${esc(c.obs)}</textarea></div></div>
+  <div class="foot"><button class="btn" onclick="fechar()">Cancelar</button><button class="btn p" onclick="salvarCli('${id||''}')">Salvar</button></div>`);$('#cNome').focus()}
+function salvarCli(id){const nome=$('#cNome').value.trim(),valor=parseMoney($('#cVal').value);
+  if(!nome){alert('Informe o nome do cliente.');return}if(valor<=0){alert('Informe o valor do honorário mensal.');return}
+  const d={nome,doc:$('#cDoc').value.trim(),contato:$('#cCont').value.trim(),whats:$('#cWa').value.trim(),email:$('#cMail').value.trim(),valor,
+    dia:Math.min(31,Math.max(1,parseInt($('#cDia').value)||10)),regime:$('#cReg').value,ativo:$('#cAt').value==='1',servicos:$('#cServ').value.trim(),obs:$('#cObs').value.trim()};
+  if(id)Object.assign(db.clientes.find(x=>x.id===id),d);else db.clientes.push({id:uid(),...d});
+  save();fechar();render();toast('Cliente salvo.')}
+function delCli(id){const c=db.clientes.find(x=>x.id===id),n=db.lanc.filter(l=>l.cli===id).length;
+  if(n){if(!confirm(`${c.nome} tem ${n} lançamento(s) registrados.\n\nRecomendo marcar como INATIVO em vez de excluir, para manter o histórico.\n\nExcluir mesmo assim o cliente E todos os lançamentos dele?`))return}
+  else if(!confirm(`Excluir ${c.nome}?`))return;
+  db.clientes=db.clientes.filter(x=>x.id!==id);db.lanc=db.lanc.filter(l=>l.cli!==id);save();render()}
+function histCli(id){const c=cli(id),ls=db.lanc.filter(l=>l.cli===id).sort((a,b)=>b.comp.localeCompare(a.comp));
+  const pago=ls.filter(l=>l.status==='pago').reduce((a,l)=>a+(l.valorPago??l.valor),0),ab=ls.filter(l=>l.status!=='pago').reduce((a,l)=>a+l.valor,0);
+  modal(`<h2>${esc(c.nome)}</h2><div class="kpis"><div class="kpi"><span>Total recebido</span><b style="color:var(--ok)">${brl(pago)}</b></div><div class="kpi"><span>Em aberto</span><b style="color:var(--warn)">${brl(ab)}</b></div></div>
+  ${c.obs?`<p class="muted">${esc(c.obs)}</p>`:''}${tabelaLanc(ls,'Sem lançamentos.')}<div class="foot"><button class="btn" onclick="fechar()">Fechar</button></div>`,true)}
+
+/* ================= Configurações ================= */
+function rConfig(){const e=db.config;
+  $('#app').innerHTML=`<div class="card"><h2>Dados do escritório</h2><p class="muted" style="margin-top:-6px">Aparecem no cabeçalho do recibo e na assinatura das mensagens.</p><div class="grid">
+  <div class="full"><label>Nome do escritório / contador</label><input data-k="nome" value="${esc(e.nome)}"></div>
+  <div><label>CPF / CNPJ</label><input data-k="doc" value="${esc(e.doc)}"></div>
+  <div><label>CRC</label><input data-k="crc" value="${esc(e.crc)}" placeholder="PE-000000/O-0"></div>
+  <div><label>Responsável (assina o recibo)</label><input data-k="resp" value="${esc(e.resp)}"></div>
+  <div class="full"><label>Endereço</label><input data-k="end" value="${esc(e.end)}"></div>
+  <div><label>Cidade/UF</label><input data-k="cidade" value="${esc(e.cidade)}" placeholder="Salgueiro/PE"></div>
+  <div><label>Telefone</label><input data-k="fone" value="${esc(e.fone)}"></div>
+  <div><label>E-mail</label><input data-k="email" value="${esc(e.email)}"></div>
+  <div><label>Chave PIX</label><input data-k="pix" value="${esc(e.pix)}"></div>
+  <div class="full"><label style="display:flex;gap:6px;align-items:center;color:var(--tx)"><input type="checkbox" id="vms" style="width:auto" ${e.vencMesSeguinte?'checked':''}> Vencimento no mês seguinte à competência (ex.: competência outubro vence em novembro)</label></div>
+  </div></div>
+  <div class="card"><h2>Modelos de mensagem do WhatsApp</h2>
+  <p class="muted" style="margin-top:-6px">Use *texto* para negrito no WhatsApp. Clique numa variável para inseri-la:</p>
+  <div class="chips">${['cliente','empresa','competencia','valor','vencimento','pix','recibo','pagamento','descricao','escritorio'].map(v=>`<code onmousedown="event.preventDefault();insVar('{${v}}')">{${v}}</code>`).join('')}</div>
+  <div class="hint">{cliente} usa o nome do contato (se cadastrado) ou o nome do cliente; {empresa} é sempre o nome/razão social.</div>
+  <div class="grid" style="margin-top:12px">
+  ${[['lembrete','Lembrete de vencimento'],['atraso','Cobrança em atraso'],['pago','Confirmação de pagamento']].map(([k,t])=>`<div class="full"><label>${t}</label><textarea rows="7" data-tpl="${k}">${esc(e.tpl[k])}</textarea></div>`).join('')}
+  </div><div class="row" style="margin-top:8px"><button class="btn" onclick="if(confirm('Restaurar os modelos padrão?')){db.config.tpl={...TPL_PADRAO};save();rConfig()}">Restaurar modelos padrão</button></div></div>
+  <div class="row" style="margin-bottom:16px"><span class="sp"></span><button class="btn p" onclick="salvarCfg()">Salvar configurações</button></div>
+  <div class="card"><h2>Versões salvas na nuvem</h2>
+  <p class="muted" style="margin-top:-6px">O Supabase guarda automaticamente uma cópia dos dados a cada hora de uso, por 90 dias. Use para desfazer um erro (ex.: excluiu algo sem querer).</p>
+  <div id="versoes"><span class="muted">Carregando…</span></div></div>
+  <div class="card"><h2>Backup dos dados</h2>
+  <p class="muted" style="margin-top:-6px">Os dados ficam no Supabase e aparecem em qualquer aparelho em que você entrar. Mesmo assim, baixe um backup de vez em quando e guarde no Google Drive ou num pendrive — ele também serve para importar os dados da versão local.</p>
+  <div class="row"><button class="btn p" onclick="exportar()">💾 Baixar backup (.json)</button><button class="btn" onclick="$('#fileImp').click()">📂 Restaurar backup</button>
+  <span class="muted">${db.ultBackup?'Último backup: '+new Date(db.ultBackup).toLocaleString('pt-BR'):'Nenhum backup feito ainda.'}</span></div>
+  <div class="row" style="margin-top:14px"><button class="btn d" onclick="zerar()">Apagar todos os dados</button></div></div>`;
+  document.querySelectorAll('#app textarea[data-tpl]').forEach(t=>t.onfocus=()=>window._lastTpl=t);
+  carregarVersoes()}
+function insVar(v){const t=window._lastTpl||document.querySelector('textarea[data-tpl]');const s=t.selectionStart,e=t.selectionEnd;t.value=t.value.slice(0,s)+v+t.value.slice(e);t.focus();t.selectionStart=t.selectionEnd=s+v.length}
+function salvarCfg(){document.querySelectorAll('#app input[data-k]').forEach(i=>db.config[i.dataset.k]=i.value.trim());
+  document.querySelectorAll('#app textarea[data-tpl]').forEach(t=>db.config.tpl[t.dataset.tpl]=t.value);
+  db.config.vencMesSeguinte=$('#vms').checked;save();render();toast('Configurações salvas.')}
+function exportar(){db.ultBackup=new Date().toISOString();save();
+  const b=new Blob([JSON.stringify(db,null,1)],{type:'application/json'}),a=document.createElement('a');
+  a.href=URL.createObjectURL(b);a.download='honorarios-backup-'+hoje()+'.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1000);render();toast('Backup baixado.')}
+$('#fileImp').onchange=ev=>{const f=ev.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);
+  if(!d.clientes||!d.lanc)throw 0;if(!confirm(`Restaurar backup com ${d.clientes.length} cliente(s) e ${d.lanc.length} lançamento(s)?\n\nOs dados atuais serão SUBSTITUÍDOS.`))return;
+  db=normalize(d);save();render();toast('Backup restaurado e enviado para a nuvem.')}catch(e){alert('Arquivo de backup inválido.')}};r.readAsText(f);ev.target.value=''};
+function zerar(){if(prompt('Isso apaga TODOS os clientes, lançamentos e configurações. Digite APAGAR para confirmar:')!=='APAGAR')return;db=blank();save();render()}
+
+/* ================= Modal ================= */
+function modal(html,wide){$('#mod').className='mod'+(wide?' wide':'');$('#mod').innerHTML=html;$('#ov').classList.add('on')}
+function fechar(){$('#ov').classList.remove('on')}
+$('#ov').onclick=e=>{if(e.target.id==='ov')fechar()};
+document.addEventListener('keydown',e=>{if(e.key==='Escape')fechar()});
+
+boot();
+</script>
+</body>
+</html>
