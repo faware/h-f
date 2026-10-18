@@ -78,6 +78,32 @@ a{color:var(--ink)}
 #cnpjMsg.err{color:var(--err)}#cnpjMsg.ok{color:var(--ok)}
 .lote-log{max-height:260px;overflow:auto;font-size:13.5px;border:1px solid var(--bd);padding:8px;margin-top:10px;background:#fafaf8}
 .lote-log div{padding:2px 0}
+.ano-wrap{overflow:auto;max-height:calc(100vh - 250px);min-height:200px}
+table.ano{border-collapse:separate;border-spacing:0;min-width:1060px;width:100%}
+.ano th,.ano td{padding:0;text-align:center;border-bottom:1px solid var(--bd)}
+.ano thead th{position:sticky;top:0;z-index:2;padding:10px 4px;background:#fafaf8}
+.ano thead th.cur{background:var(--ink);color:#fff}
+.ano .nm{position:sticky;left:0;z-index:1;background:#fff;text-align:left;padding:7px 12px;min-width:210px;max-width:250px;border-right:1.5px solid var(--ink)}
+.ano .nm b{display:block;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ano .nm span{display:block;font-size:11.5px;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ano thead th.nm{z-index:3;background:#fafaf8}
+.cel{display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;min-width:66px;height:44px;border:0;border-left:1px solid #ecece9;cursor:pointer;font:600 12.5px var(--fd);background:transparent;color:var(--ink);font-variant-numeric:tabular-nums}
+.cel small{font:500 9px var(--fd);letter-spacing:.08em;opacity:.75;text-transform:uppercase}
+.cel:hover{outline:2px solid var(--ink);outline-offset:-2px}
+.cel.cp{background:var(--ok2);color:var(--ok);font-size:16px}
+.cel.co{background:var(--warn2);color:var(--warn)}
+.cel.ca{background:#f4cfca;color:#8f1d16;font-weight:700}
+.cel.cn{color:#c4c4c0;font-size:16px}
+.cel.cn:hover{color:var(--ink);background:#f1f1ee}
+.ano .tt{padding:0 12px;font:600 12.5px var(--fd);white-space:nowrap;min-width:110px;text-align:right;border-left:1.5px solid var(--ink)}
+.ano .tt.neg{color:var(--err);font-weight:700}
+.ano tfoot td{position:sticky;bottom:0;background:#fafaf8;font:600 11.5px var(--fd);padding:7px 4px;border-top:1.5px solid var(--ink);z-index:1}
+.ano tfoot tr:first-child td{bottom:31px}
+.ano tfoot td.nm{z-index:2;background:#fafaf8;font:600 10.5px var(--fd);letter-spacing:.12em;text-transform:uppercase}
+.ano .ft.ok{color:var(--ok)}.ano .ft.ab{color:var(--warn)}
+.leg{display:flex;gap:6px;align-items:center;flex-wrap:wrap;font-size:13px;color:var(--mut)}
+.leg i{font:600 11px var(--fd);font-style:normal;padding:3px 7px;margin-left:8px}
+.leg i.cp{background:var(--ok2);color:var(--ok)}.leg i.co{background:var(--warn2);color:var(--warn)}.leg i.ca{background:#f4cfca;color:#8f1d16}.leg i.cn{background:#f1f1ee;color:#999}
 /* Recibo */
 .recibo{border:1.5px solid #111;padding:26px 30px 22px;font-family:var(--fb);color:#111;background:#fff;margin-bottom:14px}
 .r-top{display:flex;justify-content:space-between;align-items:center;gap:18px;padding-bottom:14px;border-bottom:2px solid #111}
@@ -96,6 +122,7 @@ a{color:var(--ink)}
 .r-ass b{font-family:var(--fd);font-size:14px;letter-spacing:.06em}
 .recibo .via{font:600 10px var(--fd);letter-spacing:.14em;color:#666;text-align:right;margin-top:12px;text-transform:uppercase}
 .cut{border-top:1px dashed #888;margin:18px 0}
+.pgb{break-after:page;page-break-after:always}.pgb:last-child{break-after:auto;page-break-after:auto}
 #print{display:none}
 /* Topo, login, sincronização */
 .hdrR{display:flex;align-items:center;gap:10px;font-size:12.5px;color:#a3a3a3}
@@ -114,7 +141,9 @@ body:not(.logado) header{display:none}
   body{background:#fff}
   body>*:not(#print){display:none!important}
   #print{display:block}
-  .recibo{page-break-inside:avoid}
+  .recibo{page-break-inside:avoid;break-inside:avoid;padding:16px 22px 12px;margin-bottom:4px}
+  .r-top{padding-bottom:10px}.r-logo{height:44px}.r-title{margin:12px 0 10px}.r-txt{line-height:1.65;margin-bottom:10px;font-size:13.5px}
+  .r-loc{margin:12px 0 28px}.cut{margin:10px 0}.recibo .via{margin-top:6px}
   @page{margin:14mm}
 }
 </style>
@@ -125,6 +154,7 @@ body:not(.logado) header{display:none}
   <nav id="nav">
     <button data-t="painel">Painel</button>
     <button data-t="honor">Honorários</button>
+    <button data-t="ano">Mensalidades</button>
     <button data-t="clientes">Clientes</button>
     <button data-t="config">Configurações</button>
   </nav>
@@ -280,7 +310,7 @@ document.querySelectorAll('#nav button').forEach(b=>b.onclick=()=>{tab=b.dataset
 function render(){
   document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.t===tab));
   $('#hdrEsc').textContent=db.config.nome?'· '+db.config.nome:'';aplicarLogo();
-  ({painel:rPainel,honor:rHonor,clientes:rClientes,config:rConfig})[tab]()}
+  ({painel:rPainel,honor:rHonor,ano:rAno,clientes:rClientes,config:rConfig})[tab]()}
 
 /* ================= Painel ================= */
 function rPainel(){
@@ -327,7 +357,7 @@ function rHonor(){
   <div class="row">
     ${fComp?`<button class="btn p" onclick="gerarMes('${fComp}')">Gerar honorários de ${fmtComp(fComp)}</button>`:''}
     <button class="btn" onclick="formLanc()">+ Lançamento avulso</button>
-    ${fComp?`<button class="btn wa" onclick="lote('lembrete')">Lembretes do mês em lote</button>`:''}
+    ${fComp?`<button class="btn" onclick="imprimirLote()">🖨 Imprimir recibos do mês</button><button class="btn wa" onclick="lote('lembrete')">Lembretes do mês em lote</button>`:''}
     <span class="sp"></span><span class="muted">${ls.length} lançamento(s) · ${brl(tot)}</span>
   </div></div>
   <div class="card">${tabelaLanc(ls,fComp&&!db.lanc.some(l=>l.comp===fComp)?`Nenhum honorário gerado para ${fmtComp(fComp)}. Clique em <b>Gerar honorários</b> para criar os lançamentos de todos os clientes ativos.`:'Nenhum lançamento encontrado.')}</div>`}
@@ -338,9 +368,9 @@ function tabelaLanc(ls,vazio){
   ${ls.map(l=>{const c=cli(l.cli),pago=l.status==='pago';return`<tr>
     <td><b>${esc(c.nome)}</b>${l.desc?`<div class="muted" style="font-size:12px">${esc(l.desc)}</div>`:''}</td>
     <td>${fmtComp(l.comp)}</td><td>${fmtData(l.venc)}</td><td class="n">${brl(l.valor)}</td>
-    <td>${tagStatus(l)}${pago?`<div class="muted" style="font-size:12px">${fmtData(l.pagoEm)} · Rec. ${recNum(l.recibo)}</div>`:''}</td>
+    <td>${tagStatus(l)}${pago?`<div class="muted" style="font-size:12px">${fmtData(l.pagoEm)} · Rec. ${recNum(l.recibo)}</div>`:l.recibo?`<div class="muted" style="font-size:12px">Recibo ${recNum(l.recibo)} emitido</div>`:''}</td>
     <td><div class="acts">
-      ${pago?`<button class="btn s" onclick="verRecibo('${l.id}')">🧾 Recibo</button>`:`<button class="btn s p" onclick="formPagar('${l.id}')">Receber</button>`}
+      ${pago?'':`<button class="btn s p" onclick="formPagar('${l.id}')">✓ Marcar pago</button>`}<button class="btn s" onclick="verRecibo('${l.id}')">🧾 Recibo</button>
       <button class="btn s wa" onclick="msg('${l.id}')">WhatsApp</button>
       <button class="btn s" title="Editar" onclick="formLanc('${l.id}')">✏️</button>
       <button class="btn s d" title="Excluir" onclick="delLanc('${l.id}')">🗑</button>
@@ -380,13 +410,13 @@ function delLanc(id){const l=db.lanc.find(x=>x.id===id);
   db.lanc=db.lanc.filter(x=>x.id!==id);save();render()}
 
 function formPagar(id){const l=db.lanc.find(x=>x.id===id),c=cli(l.cli);
-  modal(`<h2>Registrar recebimento</h2><p class="muted" style="margin-top:-6px">${esc(c.nome)} · ${fmtComp(l.comp)}</p>
+  modal(`<h2>Marcar como pago</h2><p class="muted" style="margin-top:-6px">${esc(c.nome)} · ${fmtComp(l.comp)}</p>
   <div class="grid">
     <div><label>Data do pagamento</label><input type="date" id="pData" value="${hoje()}"></div>
     <div><label>Valor recebido (R$)</label><input id="pVal" inputmode="decimal" value="${moneyIn(l.valor)}"></div>
     <div><label>Forma de pagamento</label><select id="pForma">${['PIX','Dinheiro','Transferência','Boleto','Cartão','Cheque'].map(f=>`<option>${f}</option>`).join('')}</select></div>
   </div>
-  <div class="foot"><button class="btn" onclick="fechar()">Cancelar</button><button class="btn p" onclick="pagar('${id}')">Confirmar e gerar recibo</button></div>`)}
+  <div class="foot"><button class="btn" onclick="fechar()">Cancelar</button><button class="btn p" onclick="pagar('${id}')">Confirmar pagamento</button></div>`)}
 function pagar(id){const l=db.lanc.find(x=>x.id===id),v=parseMoney($('#pVal').value);
   if(!$('#pData').value||v<=0){alert('Informe data e valor.');return}
   Object.assign(l,{status:'pago',pagoEm:$('#pData').value,valorPago:v,forma:$('#pForma').value});
@@ -396,7 +426,7 @@ function estornar(id){if(!confirm('Desfazer este pagamento? O lançamento volta 
   const l=db.lanc.find(x=>x.id===id);l.status='aberto';delete l.pagoEm;delete l.valorPago;delete l.forma;save();fechar();render()}
 
 /* ================= Recibo ================= */
-function reciboHTML(l,via){const c=cli(l.cli),e=db.config,v=l.valorPago??l.valor;
+function reciboHTML(l,via){const c=cli(l.cli),e=db.config,pg=l.status==='pago',v=pg?(l.valorPago??l.valor):l.valor;
   const ref=l.desc?`a ${esc(l.desc)} — competência ${fmtComp(l.comp)}`:`aos serviços mensais prestados — competência ${fmtComp(l.comp)}${c.servicos?' ('+esc(c.servicos)+')':''}`;
   const cid=(e.cidade||'').split('/')[0].split('-')[0].trim();
   return`<div class="recibo">
@@ -404,21 +434,87 @@ function reciboHTML(l,via){const c=cli(l.cli),e=db.config,v=l.valorPago??l.valor
     <div class="r-esc">${e.end?`<div>${esc(e.end)}${e.cidade?', '+esc(e.cidade):''}</div>`:''}
     ${e.resp?`<b>${esc(e.resp)}</b>`:''}<div>Contador${e.crc?' · CRC '+esc(e.crc):''}</div>
     ${e.doc?`<div>CPF/CNPJ ${esc(e.doc)}</div>`:''}${(e.fone||e.email)?`<div style="text-transform:none">${esc([e.fone,e.email].filter(Boolean).join(' · '))}</div>`:''}</div></div>
-  <div class="r-title"><span class="t">Recibo</span><span class="nr">Nº ${recNum(l.recibo)}</span><span class="v">${brl(v)}</span></div>
+  <div class="r-title"><span class="t">Recibo</span><span class="nr">Nº ${recNum(l.recibo||db.seq)}</span><span class="v">${brl(v)}</span></div>
   <p class="r-txt">Recebemos de <b>${esc(c.nome)}</b>${c.doc?`, ${soDigitos(c.doc).length===11?'CPF':'CNPJ'} ${esc(c.doc)}`:''}, a importância de <b>${brl(v)}</b> (${extenso(v)}), referente ${ref}.</p>
-  <div class="r-meta"><div>Data do recebimento: <b>${fmtData(l.pagoEm)}</b></div><div>Forma de pagamento: <b>${esc(l.forma||'—')}</b></div></div>
-  <div class="r-loc">${esc(cid||'_______________')}, ${dataExtenso(l.pagoEm)}.</div>
+  <div class="r-meta"><div>Data do recebimento: <b>${pg?fmtData(l.pagoEm):'_____/_____/_________'}</b></div><div>Forma de pagamento: <b>${pg?esc(l.forma||'—'):'____________________'}</b></div></div>
+  <div class="r-loc">${esc(cid||'_______________')}, ${pg?dataExtenso(l.pagoEm):'_____ de ____________________ de _________'}.</div>
   <div class="r-ass"><div class="ln"></div><b>${esc(e.resp||e.nome||'Responsável')}</b><div>Contador</div>${e.crc?`<div>CRC ${esc(e.crc)}</div>`:''}</div>
   ${via?`<div class="via">${via}</div>`:''}</div>`}
-function verRecibo(id){const l=db.lanc.find(x=>x.id===id);
-  modal(`<h2>Recibo nº ${recNum(l.recibo)}</h2>${reciboHTML(l)}
-  <label style="display:flex;gap:6px;align-items:center;color:var(--tx)"><input type="checkbox" id="rVias" style="width:auto" ${db.config.duasVias?'checked':''} onchange="db.config.duasVias=this.checked;save()"> Imprimir em 2 vias (cliente e escritório) na mesma folha</label>
+function verRecibo(id){const l=db.lanc.find(x=>x.id===id),pg=l.status==='pago';
+  const vias=`<label style="display:flex;gap:6px;align-items:center;color:var(--tx)"><input type="checkbox" id="rVias" style="width:auto" ${db.config.duasVias?'checked':''} onchange="db.config.duasVias=this.checked;save()"> Imprimir em 2 vias (cliente e escritório) na mesma folha</label>`;
+  if(pg)modal(`<h2>Recibo nº ${recNum(l.recibo)} — pago</h2>${reciboHTML(l)}${vias}
   <div class="foot"><button class="btn d" onclick="estornar('${id}')">Desfazer pagamento</button><span class="sp"></span>
   <button class="btn wa" onclick="msg('${id}','pago')">Aviso de pagamento</button>
-  <button class="btn" onclick="fechar()">Fechar</button><button class="btn p" onclick="imprimir('${id}')">🖨 Imprimir / Salvar PDF</button></div>`,true)}
-function imprimir(id){const l=db.lanc.find(x=>x.id===id);
-  $('#print').innerHTML=db.config.duasVias?reciboHTML(l,'1ª via — Cliente')+'<div class="cut"></div>'+reciboHTML(l,'2ª via — Escritório'):reciboHTML(l);
+  <button class="btn" onclick="fechar()">Fechar</button><button class="btn p" onclick="imprimir('${id}')">🖨 Imprimir / Salvar PDF</button></div>`,true);
+  else modal(`<h2>Recibo nº ${recNum(l.recibo||db.seq)} — a receber</h2>
+  <p class="muted" style="margin-top:-4px">Para entregar junto com a cobrança. A data e a forma de pagamento saem em branco, para preencher à mão quando o cliente pagar.${l.recibo?'':' O número é reservado ao imprimir.'}</p>${reciboHTML(l)}${vias}
+  <div class="foot"><button class="btn" onclick="fechar()">Fechar</button><span class="sp"></span>
+  <button class="btn" onclick="formPagar('${id}')">✓ Marcar como pago</button><button class="btn p" onclick="imprimir('${id}')">🖨 Imprimir / Salvar PDF</button></div>`,true)}
+function reservarRecibo(l){if(!l.recibo){l.recibo=db.seq++;l.emitidoEm=hoje();return true}return false}
+function viasHTML(l){return db.config.duasVias?reciboHTML(l,'1ª via — Cliente')+'<div class="cut"></div>'+reciboHTML(l,'2ª via — Escritório'):reciboHTML(l)}
+function imprimir(id){const l=db.lanc.find(x=>x.id===id);if(reservarRecibo(l)){save();if($('#ov').classList.contains('on')&&l.status!=='pago')verRecibo(id);render()}
+  $('#print').innerHTML=viasHTML(l);
   const t=document.title;document.title=`Recibo ${recNum(l.recibo)} - ${cli(l.cli).nome}`;window.print();document.title=t}
+function imprimirLote(){
+  const ls=db.lanc.filter(l=>l.comp===fComp&&l.status!=='pago').sort((a,b)=>cli(a.cli).nome.localeCompare(cli(b.cli).nome));
+  if(!ls.length){alert('Nenhum honorário em aberto em '+fmtComp(fComp)+'.');return}
+  if(!confirm(`Imprimir ${ls.length} recibo(s) em aberto de ${fmtComp(fComp)}${db.config.duasVias?' (2 vias por folha)':''}?\n\nOs números dos recibos serão reservados.`))return;
+  let novos=0;ls.forEach(l=>{if(reservarRecibo(l))novos++});if(novos){save();render()}
+  $('#print').innerHTML=ls.map(l=>`<div class="pgb">${viasHTML(l)}</div>`).join('');
+  const t=document.title;document.title=`Recibos ${fmtComp(fComp)}`;window.print();document.title=t}
+
+/* ================= Mensalidades: quadro anual ================= */
+let aAno=+hoje().slice(0,4),aFiltro='todos';
+const MES_CURTO=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+const num2=v=>(Number(v)||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+function mensal(cid,comp){return db.lanc.find(l=>l.cli===cid&&l.comp===comp&&!l.avulso)}
+function rAno(){
+  const pref=aAno+'-',compHoje=compAtual();
+  let cs=db.clientes.filter(c=>c.ativo||db.lanc.some(l=>l.cli===c.id&&l.comp.startsWith(pref)));
+  const devendo=c=>db.lanc.filter(l=>l.cli===c.id&&l.comp.startsWith(pref)&&status(l)==='atrasado');
+  if(aFiltro==='devendo')cs=cs.filter(c=>devendo(c).length);
+  cs.sort((a,b)=>a.nome.localeCompare(b.nome));
+  const meses=[...Array(12)].map((_,i)=>pref+pad(i+1));
+  const tot=meses.map(comp=>{const ls=db.lanc.filter(l=>l.comp===comp&&!l.avulso);
+    return{rec:ls.filter(l=>l.status==='pago').reduce((a,l)=>a+(l.valorPago??l.valor),0),ab:ls.filter(l=>l.status!=='pago').reduce((a,l)=>a+l.valor,0)}});
+  const totAtraso=cs.reduce((a,c)=>a+devendo(c).reduce((x,l)=>x+l.valor,0),0);
+  $('#app').innerHTML=`<div class="card"><div class="row">
+    <button class="btn s" onclick="aAno--;rAno()">◀</button><b style="font:700 20px var(--fd);letter-spacing:.08em;min-width:60px;text-align:center">${aAno}</b><button class="btn s" onclick="aAno++;rAno()">▶</button>
+    <select style="width:auto" onchange="aFiltro=this.value;rAno()"><option value="todos">Todos os clientes</option><option value="devendo"${aFiltro==='devendo'?' selected':''}>Só quem está devendo</option></select>
+    <span class="sp"></span>
+    <span class="leg"><i class="cp">✓</i> Pago <i class="co">0,00</i> A vencer <i class="ca">0,00</i> Em atraso <i class="cn">+</i> Não lançado</span></div>
+    <div class="hint">Clique num mês para marcar como pago, imprimir o recibo ou mandar mensagem. Em um mês ainda não lançado, o clique cria o honorário daquele mês.</div></div>
+  <div class="card" style="padding:0">${!cs.length?`<div class="empty">${aFiltro==='devendo'?'Ninguém em atraso em '+aAno+'. 🎉':'Nenhum cliente ativo.'}</div>`:
+  `<div class="ano-wrap"><table class="ano"><thead><tr><th class="nm">Cliente</th>${meses.map((m,i)=>`<th class="${m===compHoje?'cur':''}">${MES_CURTO[i]}</th>`).join('')}<th class="tt">Em atraso</th></tr></thead><tbody>
+  ${cs.map(c=>{const dv=devendo(c).reduce((a,l)=>a+l.valor,0);return`<tr><td class="nm"><b>${esc(c.fantasia||c.nome)}</b>${c.fantasia?`<span>${esc(c.nome)}</span>`:''}${!c.ativo?'<span>(inativo)</span>':''}</td>
+    ${meses.map(comp=>{const l=mensal(c.id,comp);
+      if(!l)return`<td><button class="cel cn" title="${fmtComp(comp)} — não lançado" onclick="celula('${c.id}','${comp}')">+</button></td>`;
+      const s=status(l),cls=s==='pago'?'cp':s==='atrasado'?'ca':'co';
+      const tip=s==='pago'?`Pago em ${fmtData(l.pagoEm)} · ${brl(l.valorPago??l.valor)}`:`${s==='atrasado'?'Em atraso':'A vencer'} · vence ${fmtData(l.venc)} · ${brl(l.valor)}`;
+      return`<td><button class="cel ${cls}" title="${fmtComp(comp)} — ${tip}" onclick="abrirCelula('${l.id}')">${s==='pago'?'✓':num2(l.valor)}${l.recibo&&s!=='pago'?'<small>rec.</small>':''}</button></td>`}).join('')}
+    <td class="tt ${dv?'neg':''}">${dv?brl(dv):'—'}</td></tr>`}).join('')}
+  </tbody><tfoot><tr><td class="nm">Recebido</td>${tot.map(t=>`<td class="ft ok">${t.rec?num2(t.rec):'—'}</td>`).join('')}<td class="tt"></td></tr>
+  <tr><td class="nm">Em aberto</td>${tot.map(t=>`<td class="ft ab">${t.ab?num2(t.ab):'—'}</td>`).join('')}<td class="tt neg">${totAtraso?brl(totAtraso):'—'}</td></tr></tfoot></table></div>`}</div>`}
+function celula(cid,comp){const c=cli(cid);let l=mensal(cid,comp);
+  if(!l){if(!confirm(`Lançar o honorário de ${fmtComp(comp)} para ${c.nome}?\n\nValor: ${brl(c.valor)} · Vencimento: ${fmtData(calcVenc(comp,c.dia))}`))return;
+    l={id:uid(),cli:cid,comp,valor:c.valor,venc:calcVenc(comp,c.dia),desc:'',status:'aberto'};db.lanc.push(l);save();render()}
+  abrirCelula(l.id)}
+function abrirCelula(id){const l=db.lanc.find(x=>x.id===id),c=cli(l.cli),s=status(l);
+  if(s==='pago')modal(`<h2>${esc(c.nome)} — ${fmtComp(l.comp)}</h2>
+    <p>${tagStatus(l)} &nbsp;Pago em <b>${fmtData(l.pagoEm)}</b> · ${esc(l.forma||'')} · <b>${brl(l.valorPago??l.valor)}</b> · Recibo nº ${recNum(l.recibo)}</p>
+    <div class="foot"><button class="btn d" onclick="estornar('${id}')">Desfazer pagamento</button><span class="sp"></span>
+    <button class="btn wa" onclick="msg('${id}','pago')">Aviso de pagamento</button><button class="btn" onclick="verRecibo('${id}')">🧾 Recibo</button><button class="btn" onclick="fechar()">Fechar</button></div>`);
+  else modal(`<h2>${esc(c.nome)} — ${fmtComp(l.comp)}</h2>
+    <p>${tagStatus(l)} &nbsp;Valor <b>${brl(l.valor)}</b> · vencimento ${fmtData(l.venc)}${l.recibo?' · recibo nº '+recNum(l.recibo)+' emitido':''}</p>
+    <div class="grid" style="margin-top:6px"><div><label>Data do pagamento</label><input type="date" id="qData" value="${hoje()}"></div>
+    <div><label>Forma</label><select id="qForma">${['PIX','Dinheiro','Transferência','Boleto','Cartão','Cheque'].map(f=>`<option${f===(db.config.ultForma||'PIX')?' selected':''}>${f}</option>`).join('')}</select></div></div>
+    <div class="foot"><button class="btn" onclick="fechar()">Fechar</button><span class="sp"></span>
+    <button class="btn wa" onclick="msg('${id}')">WhatsApp</button><button class="btn" onclick="verRecibo('${id}')">🧾 Recibo</button>
+    <button class="btn p" onclick="pagarRapido('${id}')">✓ Marcar como pago</button></div>`)}
+function pagarRapido(id){const l=db.lanc.find(x=>x.id===id),dt=$('#qData').value;if(!dt){alert('Informe a data do pagamento.');return}
+  const forma=$('#qForma').value;db.config.ultForma=forma;
+  Object.assign(l,{status:'pago',pagoEm:dt,valorPago:l.valor,forma});reservarRecibo(l);
+  save();fechar();render();toast(`${cli(l.cli).nome} — ${fmtComp(l.comp)} marcado como pago.`)}
 
 /* ================= WhatsApp ================= */
 function preencher(tpl,l){const c=cli(l.cli),e=db.config;
