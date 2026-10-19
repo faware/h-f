@@ -126,7 +126,9 @@ table.ano{border-collapse:separate;border-spacing:0;min-width:1060px;width:100%}
 table.res td,table.res th{padding:7px 6px;font-size:13px;white-space:nowrap}
 table.res th.sel{background:var(--ink);color:#fff}
 table.res td.ok{color:var(--ok)}table.res td.neg{color:var(--err)}
-table.res tr.sal td{border-top:1.5px solid var(--ink);font-weight:600}
+table.res tr.sal td{border-top:1.5px solid var(--ink);font-weight:600;background:#f6f6f3}
+.kpi-lucro{border:1.5px solid var(--ink)}
+.kpi-lucro::before{width:100%!important}
 table.res td:first-child{font:600 11px var(--fd);letter-spacing:.12em;text-transform:uppercase}
 /* Recibo */
 .recibo{border:1.5px solid #111;padding:26px 30px 22px;font-family:var(--fb);color:#111;background:#fff;margin-bottom:14px}
@@ -608,6 +610,10 @@ const CAT_DESP=['Aluguel','Energia','Água','Internet e telefone','Sistemas e so
 function dNav(n){dMes=somaMes(dMes,n);rDespesas()}
 function stD(d){return d.status==='pago'?'pago':d.venc<hoje()?'atrasado':'aberto'}
 function tagD(d){const s=stD(d);return s==='pago'?'<span class="tag t-ok">Paga</span>':s==='atrasado'?'<span class="tag t-at">Vencida</span>':'<span class="tag t-ab">A pagar</span>'}
+function recebMes(comp,avulso){return db.lanc.filter(l=>l.status==='pago'&&!!l.avulso===avulso&&(l.pagoEm||'').slice(0,7)===comp).reduce((a,l)=>a+(l.valorPago??l.valor),0)}
+function pct(a,b){return b?(a/b*100).toLocaleString('pt-BR',{maximumFractionDigits:1})+'%':'—'}
+function anosComDados(){const s=new Set([dMes.slice(0,4)]);db.lanc.forEach(l=>{if(l.status==='pago'&&l.pagoEm)s.add(l.pagoEm.slice(0,4))});db.desp.forEach(d=>{if(d.status==='pago'&&d.pagoEm)s.add(d.pagoEm.slice(0,4))});return[...s].sort().reverse()}
+function lucroAno(ano){let m=0,a=0,d=0;for(let i=1;i<=12;i++){const c=ano+'-'+pad(i);m+=recebMes(c,false);a+=recebMes(c,true);d+=saidasMes(c)}return{m,a,e:m+a,d,l:m+a-d}}
 function entradasMes(comp){return db.lanc.filter(l=>l.status==='pago'&&(l.pagoEm||'').slice(0,7)===comp).reduce((a,l)=>a+(l.valorPago??l.valor),0)}
 function saidasMes(comp){return db.desp.filter(d=>d.status==='pago'&&(d.pagoEm||'').slice(0,7)===comp).reduce((a,d)=>a+(d.valorPago??d.valor),0)}
 function rDespesas(){
@@ -619,7 +625,9 @@ function rDespesas(){
   const porCat={};ls.forEach(d=>{porCat[d.cat||'Outros']=(porCat[d.cat||'Outros']||0)+d.valor});
   const cats=Object.entries(porCat).sort((a,b)=>b[1]-a[1]),totCat=ls.reduce((a,d)=>a+d.valor,0);
   const ano=dMes.slice(0,4),meses=[...Array(12)].map((_,i)=>ano+'-'+pad(i+1));
-  const res=meses.map(m=>({m,e:entradasMes(m),s:saidasMes(m)}));const tE=res.reduce((a,r)=>a+r.e,0),tS=res.reduce((a,r)=>a+r.s,0);
+  let acc=0;const res=meses.map(mm=>{const m=recebMes(mm,false),a=recebMes(mm,true),s=saidasMes(mm);acc+=m+a-s;return{mm,m,a,e:m+a,s,ac:acc}});
+  const LA=lucroAno(ano),anos=anosComDados(),lucroAnoC={};anos.forEach(a=>lucroAnoC[a]=a===ano?LA:lucroAno(a));
+  const mesesCorridos=ano<hoje().slice(0,4)?12:ano>hoje().slice(0,4)?12:+hoje().slice(5,7);
   $('#app').innerHTML=avisosTopo()+`
   <div class="kpis">
     <div class="kpi"><span>Entradas recebidas no mês</span><b style="color:var(--ok)">${brl(ent)}</b><span>mensalidades + avulsos</span></div>
@@ -639,11 +647,26 @@ function rDespesas(){
     <button class="btn s" title="Editar" onclick="formDesp('${d.id}')">✏️</button><button class="btn s d" title="Excluir" onclick="delDesp('${d.id}')">🗑</button></div></td></tr>`).join('')}
   </tbody><tfoot><tr><td colspan="3" style="font:600 11px var(--fd);letter-spacing:.12em;text-transform:uppercase">Total do mês</td><td class="n"><b>${brl(totCat)}</b></td><td colspan="2"></td></tr></tfoot></table></div>
   <div class="cats">${cats.map(([c,v])=>`<div><span>${esc(c)}</span><i style="width:${Math.max(2,v/cats[0][1]*100)}%"></i><b>${brl(v)}</b></div>`).join('')}</div>`}</div>
-  <div class="card"><h2>Resultado de ${ano}</h2><div class="tw"><table class="res"><thead><tr><th></th>${meses.map((m,i)=>`<th class="n${m===dMes?' sel':''}" style="cursor:pointer" onclick="dMes='${m}';rDespesas()">${MES_CURTO[i]}</th>`).join('')}<th class="n">Total</th></tr></thead><tbody>
-    <tr><td>Entradas</td>${res.map(r=>`<td class="n ok">${r.e?num2(r.e):'—'}</td>`).join('')}<td class="n ok"><b>${num2(tE)}</b></td></tr>
-    <tr><td>Despesas</td>${res.map(r=>`<td class="n neg">${r.s?num2(r.s):'—'}</td>`).join('')}<td class="n neg"><b>${num2(tS)}</b></td></tr>
-    <tr class="sal"><td>Saldo</td>${res.map(r=>{const s=r.e-r.s;return`<td class="n${s<0?' neg':''}">${r.e||r.s?num2(s):'—'}</td>`}).join('')}<td class="n${tE-tS<0?' neg':''}"><b>${num2(tE-tS)}</b></td></tr>
-  </tbody></table></div></div>`}
+  <div class="card"><div class="row" style="margin-bottom:14px"><h2 style="margin:0">Lucro líquido</h2><span class="sp"></span>
+    <button class="btn s" onclick="dMes=somaMes(dMes,-12);rDespesas()" title="Ano anterior">◀</button><b class="ano-n">${ano}</b><button class="btn s" onclick="dMes=somaMes(dMes,12);rDespesas()" title="Próximo ano">▶</button></div>
+  <div class="kpis" style="margin-bottom:14px">
+    <div class="kpi"><span>Receita recebida em ${ano}</span><b style="color:var(--ok)">${brl(LA.e)}</b><span>mensalidades ${brl(LA.m)} · avulsos ${brl(LA.a)}</span></div>
+    <div class="kpi"><span>Despesas pagas em ${ano}</span><b style="color:var(--err)">${brl(LA.d)}</b></div>
+    <div class="kpi kpi-lucro"><span>Lucro líquido de ${ano}</span><b style="color:${LA.l<0?'var(--err)':'var(--ink)'}">${brl(LA.l)}</b><span>margem ${pct(LA.l,LA.e)} · média ${brl(LA.l/mesesCorridos)}/mês</span></div>
+  </div>
+  <div class="tw"><table class="res"><thead><tr><th></th>${meses.map((m,i)=>`<th class="n${m===dMes?' sel':''}" style="cursor:pointer" onclick="dMes='${m}';rDespesas()">${MES_CURTO[i]}</th>`).join('')}<th class="n">Total</th></tr></thead><tbody>
+    <tr><td>Mensalidades</td>${res.map(r=>`<td class="n">${r.m?num2(r.m):'—'}</td>`).join('')}<td class="n"><b>${num2(LA.m)}</b></td></tr>
+    <tr><td>Avulsos</td>${res.map(r=>`<td class="n">${r.a?num2(r.a):'—'}</td>`).join('')}<td class="n"><b>${num2(LA.a)}</b></td></tr>
+    <tr><td>Receita total</td>${res.map(r=>`<td class="n ok">${r.e?num2(r.e):'—'}</td>`).join('')}<td class="n ok"><b>${num2(LA.e)}</b></td></tr>
+    <tr><td>Despesas</td>${res.map(r=>`<td class="n neg">${r.s?num2(r.s):'—'}</td>`).join('')}<td class="n neg"><b>${num2(LA.d)}</b></td></tr>
+    <tr class="sal"><td>Lucro líquido</td>${res.map(r=>{const l=r.e-r.s;return`<td class="n${l<0?' neg':''}">${r.e||r.s?num2(l):'—'}</td>`}).join('')}<td class="n${LA.l<0?' neg':''}"><b>${num2(LA.l)}</b></td></tr>
+    <tr><td>Acumulado</td>${res.map(r=>`<td class="n muted${r.ac<0?' neg':''}">${r.e||r.s?num2(r.ac):'—'}</td>`).join('')}<td></td></tr>
+  </tbody></table></div>
+  ${anos.length>1?`<h3 style="margin-top:20px">Comparativo por ano</h3><div class="tw"><table class="res"><thead><tr><th>Ano</th><th class="n">Mensalidades</th><th class="n">Avulsos</th><th class="n">Receita</th><th class="n">Despesas</th><th class="n">Lucro líquido</th><th class="n">Margem</th><th class="n">Variação</th></tr></thead><tbody>
+    ${anos.map((a,i)=>{const x=lucroAnoC[a],ant=lucroAnoC[anos[i+1]];const vr=ant&&ant.l?((x.l-ant.l)/Math.abs(ant.l)*100):null;
+      return`<tr${a===ano?' class="sal"':''} style="cursor:pointer" onclick="dMes='${a}'+dMes.slice(4);rDespesas()"><td>${a}${a===hoje().slice(0,4)?' <span class="muted" style="font:500 10px var(--fd)">EM ANDAMENTO</span>':''}</td><td class="n">${num2(x.m)}</td><td class="n">${num2(x.a)}</td><td class="n ok">${num2(x.e)}</td><td class="n neg">${num2(x.d)}</td><td class="n${x.l<0?' neg':''}"><b>${num2(x.l)}</b></td><td class="n">${pct(x.l,x.e)}</td><td class="n${vr!=null&&vr<0?' neg':vr>0?' ok':''}">${vr==null?'—':(vr>0?'+':'')+vr.toLocaleString('pt-BR',{maximumFractionDigits:1})+'%'}</td></tr>`}).join('')}
+  </tbody></table></div>`:''}
+  <div class="hint">Lucro líquido = tudo o que foi efetivamente recebido menos tudo o que foi pago no período (regime de caixa). Para refletir o lucro real, lance como despesa também os seus impostos (DAS, IR, ISS), o pró-labore e as anuidades.</div></div>`}
 function formDesp(id){const d=id?db.desp.find(x=>x.id===id):{fixa:false,venc:dMes===compAtual()?hoje():dMes+'-10'};
   const cats=[...new Set([...CAT_DESP,...db.desp.map(x=>x.cat).filter(Boolean)])];
   modal(`<h2>${id?'Editar despesa':'Nova despesa'}</h2><div class="grid">
