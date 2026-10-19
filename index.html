@@ -116,6 +116,18 @@ table.ano{border-collapse:separate;border-spacing:0;min-width:1060px;width:100%}
 .leg{display:flex;gap:6px;align-items:center;flex-wrap:wrap;font-size:13px;color:var(--mut)}
 .leg i{font:600 11px var(--fd);font-style:normal;padding:3px 7px;margin-left:8px}
 .leg i.cp{background:var(--ok2);color:var(--ok)}.leg i.co{background:var(--warn2);color:var(--warn)}.leg i.ca{background:#f4cfca;color:#8f1d16}.leg i.cn{background:#f1f1ee;color:#999}
+.seg{display:inline-flex;border:1.5px solid var(--ink)}
+.seg button{border:0;background:#fff;padding:8px 14px;font:600 11.5px var(--fd);letter-spacing:.1em;text-transform:uppercase;cursor:pointer;color:var(--ink)}
+.seg button.on{background:var(--ink);color:#fff}.seg button:disabled{opacity:.4;cursor:not-allowed}
+.cats{margin-top:16px;display:grid;gap:6px}
+.cats div{display:grid;grid-template-columns:180px 1fr 110px;align-items:center;gap:10px;font-size:13.5px}
+.cats i{display:block;height:10px;background:var(--ink);clip-path:polygon(0 0,100% 0,calc(100% - 5px) 100%,0 100%)}
+.cats b{text-align:right;font:600 13px var(--fd)}
+table.res td,table.res th{padding:7px 6px;font-size:13px;white-space:nowrap}
+table.res th.sel{background:var(--ink);color:#fff}
+table.res td.ok{color:var(--ok)}table.res td.neg{color:var(--err)}
+table.res tr.sal td{border-top:1.5px solid var(--ink);font-weight:600}
+table.res td:first-child{font:600 11px var(--fd);letter-spacing:.12em;text-transform:uppercase}
 /* Recibo */
 .recibo{border:1.5px solid #111;padding:26px 30px 22px;font-family:var(--fb);color:#111;background:#fff;margin-bottom:14px}
 .r-top{display:flex;justify-content:space-between;align-items:center;gap:18px;padding-bottom:14px;border-bottom:2px solid #111}
@@ -148,7 +160,7 @@ body:not(.logado) header{display:none}
 .login input{margin-bottom:14px}
 .login .msg{color:var(--err);font-size:13px;min-height:18px;margin-bottom:6px}
 .vers{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--bd)}
-@media (max-width:640px){.acoes-mes .btn{flex:1 1 calc(50% - 10px);padding-left:6px;padding-right:10px;font-size:11px}.acoes-mes .lbl{width:100%}.acoes-mes .sp{display:none}.kpis{grid-template-columns:1fr 1fr}.kpi b{font-size:19px}header{padding:0 14px;gap:6px}.brand img{height:24px}nav button{padding:14px 9px;font-size:11px}nav button.on::after{bottom:6px}.hdrR{width:100%;padding-bottom:10px}.r-top{flex-direction:column;align-items:flex-start}.r-esc{text-align:left}}
+@media (max-width:640px){.cats div{grid-template-columns:110px 1fr 90px}.acoes-mes .btn{flex:1 1 calc(50% - 10px);padding-left:6px;padding-right:10px;font-size:11px}.acoes-mes .lbl{width:100%}.acoes-mes .sp{display:none}.kpis{grid-template-columns:1fr 1fr}.kpi b{font-size:19px}header{padding:0 14px;gap:6px}.brand img{height:24px}nav button{padding:14px 9px;font-size:11px}nav button.on::after{bottom:6px}.hdrR{width:100%;padding-bottom:10px}.r-top{flex-direction:column;align-items:flex-start}.r-esc{text-align:left}}
 @media print{
   body{background:#fff}
   body>*:not(#print){display:none!important}
@@ -165,6 +177,8 @@ body:not(.logado) header{display:none}
   <div class="brand"><img id="hdrLogo" alt=""><span>Honorários</span></div><small id="hdrEsc" hidden></small>
   <nav id="nav">
     <button data-t="ano">Mensalidades</button>
+    <button data-t="avulsos">Avulsos</button>
+    <button data-t="despesas">Despesas</button>
     <button data-t="clientes">Clientes</button>
     <button data-t="config">Configurações</button>
   </nav>
@@ -191,7 +205,7 @@ const TPL_PADRAO={
   atraso:"Olá, {cliente}! Tudo bem?\n\nConsta em aberto o pagamento dos honorários contábeis de *{competencia}*, no valor de *{valor}*, com vencimento em *{vencimento}*.\n\nSe já pagou, por favor desconsidere esta mensagem e nos envie o comprovante. 🙏\n\nChave PIX: {pix}\n\n{escritorio}",
   pago:"Olá, {cliente}! Confirmamos o recebimento dos honorários contábeis de *{competencia}*, no valor de *{valor}*, pago em {pagamento}.\n\nRecibo nº {recibo}.\n\nObrigado pela confiança!\n{escritorio}"
 };
-function blank(){return{config:{nome:'',doc:'',crc:'',resp:'',end:'',cidade:'',fone:'',email:'',pix:'',vencMesSeguinte:true,duasVias:true,tpl:{...TPL_PADRAO}},clientes:[],lanc:[],seq:1,ultBackup:null}}
+function blank(){return{config:{nome:'',doc:'',crc:'',resp:'',end:'',cidade:'',fone:'',email:'',pix:'',vencMesSeguinte:true,duasVias:true,tpl:{...TPL_PADRAO}},clientes:[],lanc:[],desp:[],seq:1,ultBackup:null}}
 function normalize(d){const b=blank();if(!d||typeof d!=='object')return b;
   const tpl=Object.assign({},TPL_PADRAO,(d.config&&d.config.tpl)||{});
   d.config=Object.assign({},b.config,d.config||{});d.config.tpl=tpl;
@@ -320,19 +334,19 @@ document.querySelectorAll('#nav button').forEach(b=>b.onclick=()=>{tab=b.dataset
 function render(){
   document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.t===tab));
   $('#hdrEsc').textContent=db.config.nome?'· '+db.config.nome:'';aplicarLogo();
-  ({ano:rAno,clientes:rClientes,config:rConfig})[tab]()}
+  ({ano:rAno,avulsos:rAvulsos,despesas:rDespesas,clientes:rClientes,config:rConfig})[tab]()}
 
 function tabelaLanc(ls,vazio){
   if(!ls.length)return`<div class="empty">${vazio}</div>`;
   return`<div class="tw"><table><thead><tr><th>Cliente</th><th>Competência</th><th>Vencimento</th><th class="n">Valor</th><th>Situação</th><th style="text-align:right">Ações</th></tr></thead><tbody>
-  ${ls.map(l=>{const c=cli(l.cli),pago=l.status==='pago';return`<tr>
-    <td><b>${esc(c.nome)}</b>${l.desc?`<div class="muted" style="font-size:12px">${esc(l.desc)}</div>`:''}</td>
+  ${ls.map(l=>{const c=cliL(l),pago=l.status==='pago';return`<tr>
+    <td><b>${esc(c.nome)}</b>${c.avulsoSemCadastro?' <span class="tag t-in">Sem cadastro</span>':''}${l.desc?`<div class="muted" style="font-size:12px">${esc(l.desc)}</div>`:''}</td>
     <td>${fmtComp(l.comp)}</td><td>${fmtData(l.venc)}</td><td class="n">${brl(l.valor)}</td>
     <td>${tagStatus(l)}${pago?`<div class="muted" style="font-size:12px">${fmtData(l.pagoEm)} · Rec. ${recNum(l.recibo)}</div>`:l.recibo?`<div class="muted" style="font-size:12px">Recibo ${recNum(l.recibo)} emitido</div>`:''}</td>
     <td><div class="acts">
       ${pago?'':`<button class="btn s p" onclick="formPagar('${l.id}')">✓ Marcar pago</button>`}<button class="btn s" onclick="verRecibo('${l.id}')">🧾 Recibo</button>
       <button class="btn s wa" onclick="msg('${l.id}')">WhatsApp</button>
-      <button class="btn s" title="Editar" onclick="formLanc('${l.id}')">✏️</button>
+      <button class="btn s" title="Editar" onclick="${l.avulso?'formAvulso':'formLanc'}('${l.id}')">✏️</button>
       <button class="btn s d" title="Excluir" onclick="delLanc('${l.id}')">🗑</button>
     </div></td></tr>`}).join('')}</tbody></table></div>`}
 
@@ -366,10 +380,10 @@ function salvarLanc(id){
   else db.lanc.push({id:uid(),cli:$('#lCli').value,comp,venc,valor:v,desc:$('#lDesc').value.trim(),status:'aberto',avulso:true});
   save();fechar();render();toast('Lançamento salvo.')}
 function delLanc(id){const l=db.lanc.find(x=>x.id===id);
-  if(!confirm(`Excluir o lançamento de ${cli(l.cli).nome} (${fmtComp(l.comp)})?${l.status==='pago'?'\n\nAtenção: ele já foi pago e tem recibo emitido.':''}`))return;
+  if(!confirm(`Excluir o lançamento de ${cliL(l).nome} (${fmtComp(l.comp)})?${l.status==='pago'?'\n\nAtenção: ele já foi pago e tem recibo emitido.':''}`))return;
   db.lanc=db.lanc.filter(x=>x.id!==id);save();render()}
 
-function formPagar(id){const l=db.lanc.find(x=>x.id===id),c=cli(l.cli);
+function formPagar(id){const l=db.lanc.find(x=>x.id===id),c=cliL(l);
   modal(`<h2>Marcar como pago</h2><p class="muted" style="margin-top:-6px">${esc(c.nome)} · ${fmtComp(l.comp)}</p>
   <div class="grid">
     <div><label>Data do pagamento</label><input type="date" id="pData" value="${hoje()}"></div>
@@ -386,8 +400,8 @@ function estornar(id){if(!confirm('Desfazer este pagamento? O lançamento volta 
   const l=db.lanc.find(x=>x.id===id);l.status='aberto';delete l.pagoEm;delete l.valorPago;delete l.forma;save();fechar();render()}
 
 /* ================= Recibo ================= */
-function reciboHTML(l,via){const c=cli(l.cli),e=db.config,pg=l.status==='pago',v=pg?(l.valorPago??l.valor):l.valor;
-  const ref=l.desc?`a ${esc(l.desc)} — competência ${fmtComp(l.comp)}`:`aos serviços mensais prestados — competência ${fmtComp(l.comp)}${c.servicos?' ('+esc(c.servicos)+')':''}`;
+function reciboHTML(l,via){const c=cliL(l),e=db.config,pg=l.status==='pago',v=pg?(l.valorPago??l.valor):l.valor;
+  const ref=l.avulso?`a ${esc(l.desc)}`:l.desc?`a ${esc(l.desc)} — competência ${fmtComp(l.comp)}`:`aos serviços mensais prestados — competência ${fmtComp(l.comp)}${c.servicos?' ('+esc(c.servicos)+')':''}`;
   const cid=(e.cidade||'').split('/')[0].split('-')[0].trim();
   return`<div class="recibo">
   <div class="r-top">${e.logo?`<img class="r-logo" src="${e.logo}" alt="">`:`<b style="font:700 20px var(--fd);letter-spacing:.12em;text-transform:uppercase">${esc(e.nome||'')}</b>`}
@@ -414,9 +428,9 @@ function reservarRecibo(l){if(!l.recibo){l.recibo=db.seq++;l.emitidoEm=hoje();re
 function viasHTML(l){return db.config.duasVias?reciboHTML(l,'1ª via — Cliente')+'<div class="cut"></div>'+reciboHTML(l,'2ª via — Escritório'):reciboHTML(l)}
 function imprimir(id){const l=db.lanc.find(x=>x.id===id);if(reservarRecibo(l)){save();if($('#ov').classList.contains('on')&&l.status!=='pago')verRecibo(id);render()}
   $('#print').innerHTML=viasHTML(l);
-  const t=document.title;document.title=`Recibo ${recNum(l.recibo)} - ${cli(l.cli).nome}`;window.print();document.title=t}
+  const t=document.title;document.title=`Recibo ${recNum(l.recibo)} - ${cliL(l).nome}`;window.print();document.title=t}
 function imprimirLote(){
-  const ls=db.lanc.filter(l=>l.comp===fComp&&l.status!=='pago').sort((a,b)=>cli(a.cli).nome.localeCompare(cli(b.cli).nome));
+  const ls=db.lanc.filter(l=>l.comp===fComp&&l.status!=='pago').sort((a,b)=>cliL(a).nome.localeCompare(cliL(b).nome));
   if(!ls.length){alert('Nenhum honorário em aberto em '+fmtComp(fComp)+'.');return}
   if(!confirm(`Imprimir ${ls.length} recibo(s) em aberto de ${fmtComp(fComp)}${db.config.duasVias?' (2 vias por folha)':''}?\n\nOs números dos recibos serão reservados.`))return;
   let novos=0;ls.forEach(l=>{if(reservarRecibo(l))novos++});if(novos){save();render()}
@@ -442,7 +456,7 @@ function rAno(){
   if(aBusca){const b=aBusca.toLowerCase();cs=cs.filter(c=>(c.nome+' '+(c.fantasia||'')+' '+soDigitos(c.doc)).toLowerCase().includes(b))}
   cs.sort((a,b)=>(a.fantasia||a.nome).localeCompare(b.fantasia||b.nome));
   const meses=[...Array(12)].map((_,i)=>pref+pad(i+1));
-  const doAno=db.lanc.filter(l=>l.comp.startsWith(pref));
+  const doAno=db.lanc.filter(l=>l.comp.startsWith(pref)&&!l.avulso);
   const tot=meses.map(comp=>{const ls=db.lanc.filter(l=>l.comp===comp&&!l.avulso);
     return{rec:ls.filter(l=>l.status==='pago').reduce((a,l)=>a+(l.valorPago??l.valor),0),ab:ls.filter(l=>l.status!=='pago').reduce((a,l)=>a+l.valor,0)}});
   const kRec=doAno.filter(l=>l.status==='pago').reduce((a,l)=>a+(l.valorPago??l.valor),0);
@@ -453,7 +467,6 @@ function rAno(){
   const abertosMes=db.lanc.filter(l=>l.comp===fComp&&l.status!=='pago').length;
   const atrTodos=db.lanc.filter(l=>status(l)==='atrasado').length;
   const totDv=cs.reduce((a,c)=>a+atrasados(c).reduce((x,l)=>x+l.valor,0),0);
-  const avulsos=doAno.filter(l=>l.avulso).sort((a,b)=>b.comp.localeCompare(a.comp));
   $('#app').innerHTML=avisosTopo()+`
   <div class="kpis">
     <div class="kpi"><span>Recebido em ${aAno}</span><b style="color:var(--ok)">${brl(kRec)}</b></div>
@@ -465,7 +478,7 @@ function rAno(){
     <button class="btn s" onclick="aAno--;rAno()" title="Ano anterior">◀</button><b class="ano-n">${aAno}</b><button class="btn s" onclick="aAno++;rAno()" title="Próximo ano">▶</button>
     <select style="width:auto" onchange="aFiltro=this.value;rAno()"><option value="todos">Todos os clientes</option><option value="devendo"${aFiltro==='devendo'?' selected':''}>Só quem está devendo</option></select>
     <input id="ab" value="${esc(aBusca)}" placeholder="Buscar cliente..." style="flex:1;min-width:170px" oninput="aBusca=this.value;rAno();const e=$('#ab');e.focus();e.setSelectionRange(e.value.length,e.value.length)">
-    <button class="btn" onclick="formLanc()">+ Serviço avulso</button>
+    <button class="btn" onclick="formAvulso()">+ Serviço avulso</button>
   </div>
   <div class="row acoes-mes">
     <span class="lbl">Mês de <b>${fmtComp(fComp)}</b>:</span>
@@ -488,12 +501,12 @@ function rAno(){
     <td class="tt ${dv?'neg':''}">${dv?brl(dv):'—'}</td></tr>`}).join('')}
   </tbody><tfoot><tr><td class="nm">Recebido</td>${tot.map(t=>`<td class="ft ok">${t.rec?num2(t.rec):'—'}</td>`).join('')}<td class="tt"></td></tr>
   <tr><td class="nm">Em aberto</td>${tot.map(t=>`<td class="ft ab">${t.ab?num2(t.ab):'—'}</td>`).join('')}<td class="tt neg">${totDv?brl(totDv):'—'}</td></tr></tfoot></table></div>`}</div>
-  ${avulsos.length?`<div class="card"><h2>Serviços avulsos de ${aAno}</h2>${tabelaLanc(avulsos,'')}</div>`:''}`}
+`}
 function celula(cid,comp){const c=cli(cid);let l=mensal(cid,comp);
   if(!l){if(!confirm(`Lançar o honorário de ${fmtComp(comp)} para ${c.nome}?\n\nValor: ${brl(c.valor)} · Vencimento: ${fmtData(calcVenc(comp,c.dia))}`))return;
     l={id:uid(),cli:cid,comp,valor:c.valor,venc:calcVenc(comp,c.dia),desc:'',status:'aberto'};db.lanc.push(l);save();render()}
   abrirCelula(l.id)}
-function abrirCelula(id){const l=db.lanc.find(x=>x.id===id),c=cli(l.cli),s=status(l);
+function abrirCelula(id){const l=db.lanc.find(x=>x.id===id),c=cliL(l),s=status(l);
   if(s==='pago')modal(`<h2>${esc(c.nome)} — ${fmtComp(l.comp)}</h2>
     <p>${tagStatus(l)} &nbsp;Pago em <b>${fmtData(l.pagoEm)}</b> · ${esc(l.forma||'')} · <b>${brl(l.valorPago??l.valor)}</b> · Recibo nº ${recNum(l.recibo)}</p>
     <div class="foot"><button class="btn d" onclick="estornar('${id}')">Desfazer pagamento</button><span class="sp"></span>
@@ -508,15 +521,178 @@ function abrirCelula(id){const l=db.lanc.find(x=>x.id===id),c=cli(l.cli),s=statu
 function pagarRapido(id){const l=db.lanc.find(x=>x.id===id),dt=$('#qData').value;if(!dt){alert('Informe a data do pagamento.');return}
   const forma=$('#qForma').value;db.config.ultForma=forma;
   Object.assign(l,{status:'pago',pagoEm:dt,valorPago:l.valor,forma});reservarRecibo(l);
-  save();fechar();render();toast(`${cli(l.cli).nome} — ${fmtComp(l.comp)} marcado como pago.`)}
+  save();fechar();render();toast(`${cliL(l).nome} — ${fmtComp(l.comp)} marcado como pago.`)}
+
+/* ================= Pessoa do lançamento (cliente cadastrado ou avulso) ================= */
+function cliL(l){if(l&&l.cli)return cli(l.cli);const p=(l&&l.pessoa)||{};return{nome:p.nome||'(sem nome)',doc:p.doc||'',whats:p.whats||'',contato:p.contato||'',servicos:'',avulsoSemCadastro:true}}
+const FORMAS=['PIX','Dinheiro','Transferência','Boleto','Cartão','Cheque'];
+function mesNav(v,fn){return`<div class="row" style="gap:6px"><button class="btn s" onclick="${fn}(-1)" title="Mês anterior">◀</button><b class="ano-n" style="min-width:170px;text-transform:capitalize">${fmtComp(v)}</b><button class="btn s" onclick="${fn}(1)" title="Próximo mês">▶</button></div>`}
+function somaMes(comp,n){let[y,m]=comp.split('-').map(Number);m+=n;while(m>12){m-=12;y++}while(m<1){m+=12;y--}return y+'-'+pad(m)}
+
+/* ================= Avulsos ================= */
+let vMes=compAtual(),vAno=false,vStatus='todos',vBusca='';
+function vNav(n){vMes=somaMes(vMes,n);rAvulsos()}
+function rAvulsos(){
+  const ehDoPeriodo=l=>vAno?l.comp.startsWith(vMes.slice(0,4)):l.comp===vMes;
+  let ls=db.lanc.filter(l=>l.avulso&&ehDoPeriodo(l));
+  const base=ls;
+  if(vStatus!=='todos')ls=ls.filter(l=>status(l)===vStatus);
+  if(vBusca){const b=vBusca.toLowerCase();ls=ls.filter(l=>(cliL(l).nome+' '+(l.desc||'')+' '+soDigitos(cliL(l).doc)).toLowerCase().includes(b))}
+  ls.sort((a,b)=>b.venc.localeCompare(a.venc));
+  const rec=base.filter(l=>l.status==='pago').reduce((a,l)=>a+(l.valorPago??l.valor),0);
+  const ab=base.filter(l=>l.status!=='pago').reduce((a,l)=>a+l.valor,0);
+  const atr=base.filter(l=>status(l)==='atrasado').reduce((a,l)=>a+l.valor,0);
+  $('#app').innerHTML=avisosTopo()+`
+  <div class="kpis">
+    <div class="kpi"><span>Recebido ${vAno?'em '+vMes.slice(0,4):'no mês'}</span><b style="color:var(--ok)">${brl(rec)}</b></div>
+    <div class="kpi"><span>A receber</span><b style="color:var(--warn)">${brl(ab)}</b></div>
+    <div class="kpi"><span>Em atraso</span><b style="color:var(--err)">${brl(atr)}</b></div>
+    <div class="kpi"><span>Serviços</span><b>${base.length}</b></div>
+  </div>
+  <div class="card"><div class="row">
+    ${vAno?`<div class="row" style="gap:6px"><button class="btn s" onclick="vMes=somaMes(vMes,-12);rAvulsos()">◀</button><b class="ano-n">${vMes.slice(0,4)}</b><button class="btn s" onclick="vMes=somaMes(vMes,12);rAvulsos()">▶</button></div>`:mesNav(vMes,'vNav')}
+    <label style="display:flex;gap:6px;align-items:center;margin:0;color:var(--tx)"><input type="checkbox" style="width:auto" ${vAno?'checked':''} onchange="vAno=this.checked;rAvulsos()"> Ano inteiro</label>
+    <select style="width:auto" onchange="vStatus=this.value;rAvulsos()">${[['todos','Todas as situações'],['aberto','A receber'],['atrasado','Em atraso'],['pago','Pagos']].map(([v,t])=>`<option value="${v}"${vStatus===v?' selected':''}>${t}</option>`).join('')}</select>
+    <input id="vb" value="${esc(vBusca)}" placeholder="Buscar nome, serviço, CPF/CNPJ..." style="flex:1;min-width:170px" oninput="vBusca=this.value;rAvulsos();const e=$('#vb');e.focus();e.setSelectionRange(e.value.length,e.value.length)">
+    <button class="btn p" onclick="formAvulso()">+ Novo avulso</button></div>
+    <div class="hint">Serviços fora da mensalidade — IRPF, abertura de empresa, certidões, consultorias — para clientes cadastrados ou para qualquer pessoa, sem precisar cadastrar.</div></div>
+  <div class="card">${tabelaLanc(ls,base.length?'Nenhum serviço com esse filtro.':'Nenhum serviço avulso '+(vAno?'em '+vMes.slice(0,4):'em '+fmtComp(vMes))+'. Clique em <b>+ Novo avulso</b>.')}</div>`}
+function formAvulso(id){
+  const l=id?db.lanc.find(x=>x.id===id):null,p=(l&&l.pessoa)||{};
+  const temCli=l?!!l.cli:false;
+  const clis=db.clientes.filter(c=>c.ativo||(l&&c.id===l.cli)).sort((a,b)=>(a.fantasia||a.nome).localeCompare(b.fantasia||b.nome));
+  const data=l?(l.data||l.venc):hoje();
+  modal(`<h2>${l?'Editar serviço avulso':'Novo serviço avulso'}</h2>
+  <div class="seg"><button type="button" id="vtA" class="${temCli?'':'on'}" onclick="vTipo(false)">Pessoa sem cadastro</button><button type="button" id="vtC" class="${temCli?'on':''}" onclick="vTipo(true)" ${clis.length?'':'disabled title="Nenhum cliente cadastrado"'}>Cliente cadastrado</button></div>
+  <div class="grid" style="margin-top:14px">
+    <div class="full" id="vbCli" style="${temCli?'':'display:none'}"><label>Cliente</label><select id="vCli">${clis.map(c=>`<option value="${c.id}"${l&&l.cli===c.id?' selected':''}>${esc(c.fantasia?c.fantasia+' — '+c.nome:c.nome)}</option>`).join('')}</select></div>
+    <div class="full vbP" style="${temCli?'display:none':''}"><label>CPF ou CNPJ (opcional)</label><div class="cnpjbox"><input id="vDoc" value="${esc(p.doc)}" placeholder="Com CNPJ, o nome é preenchido sozinho" onblur="this.value=fmtDoc(this.value)" oninput="if(soDigitos(this.value).length===14&&!$('#vNome').value.trim())vBuscaCNPJ()">
+      <button class="btn" type="button" id="vBtnCnpj" onclick="vBuscaCNPJ()">Buscar CNPJ</button></div><div id="vCnpjMsg" style="font-size:13px;margin-top:4px;min-height:16px"></div></div>
+    <div class="full vbP" style="${temCli?'display:none':''}"><label>Nome / Razão social *</label><input id="vNome" value="${esc(p.nome)}"></div>
+    <div class="vbP" style="${temCli?'display:none':''}"><label>Nome para a mensagem</label><input id="vCont" value="${esc(p.contato)}" placeholder="Ex.: Ana"></div>
+    <div class="vbP" style="${temCli?'display:none':''}"><label>WhatsApp</label><input id="vWa" value="${esc(p.whats)}" placeholder="(87) 99999-9999" onblur="this.value=fmtFone(this.value)"></div>
+    <div class="full"><label>Serviço * (aparece no recibo)</label><input id="vDesc" list="vServs" value="${esc(l?l.desc:'')}" placeholder="Ex.: Declaração de IRPF 2026">
+      <datalist id="vServs">${[...new Set(['Declaração de IRPF','Abertura de empresa','Alteração contratual','Baixa de empresa','Certidão negativa','Declaração anual do MEI (DASN-SIMEI)','Parcelamento de débitos','Consultoria contábil',...db.lanc.filter(x=>x.avulso&&x.desc).map(x=>x.desc)])].map(s=>`<option value="${esc(s)}">`).join('')}</datalist></div>
+    <div><label>Valor (R$) *</label><input id="vVal" inputmode="decimal" value="${l?moneyIn(l.valor):''}"></div>
+    <div><label>Data do serviço</label><input type="date" id="vData" value="${data}" onchange="if(!$('#vVenc').dataset.m)$('#vVenc').value=this.value"></div>
+    <div><label>Vencimento</label><input type="date" id="vVenc" value="${l?l.venc:data}" oninput="this.dataset.m=1"></div>
+    ${l?'':`<div class="full"><label style="display:flex;gap:6px;align-items:center;color:var(--tx);margin:4px 0 0"><input type="checkbox" id="vPago" style="width:auto" onchange="$('#vPgBox').style.display=this.checked?'':'none'"> Já foi pago</label></div>
+    <div class="full" id="vPgBox" style="display:none"><div class="grid"><div><label>Data do pagamento</label><input type="date" id="vPgData" value="${hoje()}"></div>
+      <div><label>Forma</label><select id="vPgForma">${FORMAS.map(f=>`<option${f===(db.config.ultForma||'PIX')?' selected':''}>${f}</option>`).join('')}</select></div></div></div>`}
+  </div>
+  <div class="foot"><button class="btn" onclick="fechar()">Cancelar</button><button class="btn p" onclick="salvarAvulso('${id||''}')">Salvar</button></div>`);
+  window._vCli=temCli;(temCli?$('#vDesc'):$('#vDoc')).focus()}
+function vTipo(c){window._vCli=c;$('#vtA').classList.toggle('on',!c);$('#vtC').classList.toggle('on',c);$('#vbCli').style.display=c?'':'none';document.querySelectorAll('.vbP').forEach(e=>e.style.display=c?'none':'')}
+async function vBuscaCNPJ(){const m=$('#vCnpjMsg'),b=$('#vBtnCnpj');m.style.color='';m.textContent='Consultando…';b.disabled=true;
+  try{const d=await buscaCNPJ($('#vDoc').value);$('#vDoc').value=fmtDoc($('#vDoc').value);$('#vNome').value=d.razao;
+    if(d.socio&&!$('#vCont').value)$('#vCont').value=titulo(d.socio.split(' ')[0]);if(ehCelular(d.tel)&&!$('#vWa').value)$('#vWa').value=fmtFone(d.tel);
+    const dup=cnpjDuplicado($('#vDoc').value);m.style.color=dup?'var(--warn)':'var(--ok)';m.textContent=dup?'Esta empresa já é sua cliente ('+dup.nome+') — pode escolher "Cliente cadastrado".':'✓ '+(d.situacao?'Situação: '+d.situacao:'Dados importados')}
+  catch(e){m.style.color='var(--err)';m.textContent=e.message}finally{b.disabled=false}}
+function salvarAvulso(id){
+  const desc=$('#vDesc').value.trim(),valor=parseMoney($('#vVal').value),data=$('#vData').value,venc=$('#vVenc').value||data;
+  if(!desc){alert('Descreva o serviço.');return}if(valor<=0){alert('Informe o valor.');return}if(!data){alert('Informe a data do serviço.');return}
+  let cliId=null,pessoa=null;
+  if(window._vCli){cliId=$('#vCli').value;if(!cliId){alert('Escolha o cliente.');return}}
+  else{const nome=$('#vNome').value.trim();if(!nome){alert('Informe o nome de quem contratou.');return}
+    pessoa={nome,doc:fmtDoc($('#vDoc').value),contato:$('#vCont').value.trim(),whats:$('#vWa').value.trim()}}
+  const d={cli:cliId,pessoa,desc,valor,data,comp:data.slice(0,7),venc,avulso:true};
+  let l;
+  if(id){l=db.lanc.find(x=>x.id===id);Object.assign(l,d);if(l.status==='pago'&&l.valorPago==null)l.valorPago=valor}
+  else{l={id:uid(),...d,status:'aberto'};db.lanc.push(l);
+    if($('#vPago').checked){const forma=$('#vPgForma').value;db.config.ultForma=forma;Object.assign(l,{status:'pago',pagoEm:$('#vPgData').value||hoje(),valorPago:valor,forma});reservarRecibo(l)}}
+  save();fechar();render();toast('Serviço salvo.');if(!id&&l.status==='pago')verRecibo(l.id)}
+
+/* ================= Despesas ================= */
+let dMes=compAtual();
+const CAT_DESP=['Aluguel','Energia','Água','Internet e telefone','Sistemas e software','Salários e encargos','Pró-labore','Impostos e taxas','CRC e anuidades','Material de escritório','Transporte e combustível','Marketing','Manutenção','Tarifas bancárias','Outros'];
+function dNav(n){dMes=somaMes(dMes,n);rDespesas()}
+function stD(d){return d.status==='pago'?'pago':d.venc<hoje()?'atrasado':'aberto'}
+function tagD(d){const s=stD(d);return s==='pago'?'<span class="tag t-ok">Paga</span>':s==='atrasado'?'<span class="tag t-at">Vencida</span>':'<span class="tag t-ab">A pagar</span>'}
+function entradasMes(comp){return db.lanc.filter(l=>l.status==='pago'&&(l.pagoEm||'').slice(0,7)===comp).reduce((a,l)=>a+(l.valorPago??l.valor),0)}
+function saidasMes(comp){return db.desp.filter(d=>d.status==='pago'&&(d.pagoEm||'').slice(0,7)===comp).reduce((a,d)=>a+(d.valorPago??d.valor),0)}
+function rDespesas(){
+  const ls=db.desp.filter(d=>d.venc.slice(0,7)===dMes).sort((a,b)=>a.venc.localeCompare(b.venc)||a.desc.localeCompare(b.desc));
+  const ent=entradasMes(dMes),sai=saidasMes(dMes),saldo=ent-sai;
+  const aPagar=ls.filter(d=>d.status!=='pago').reduce((a,d)=>a+d.valor,0);
+  const vencidas=db.desp.filter(d=>stD(d)==='atrasado');
+  const fixasFaltando=fixasPendentes(dMes).length;
+  const porCat={};ls.forEach(d=>{porCat[d.cat||'Outros']=(porCat[d.cat||'Outros']||0)+d.valor});
+  const cats=Object.entries(porCat).sort((a,b)=>b[1]-a[1]),totCat=ls.reduce((a,d)=>a+d.valor,0);
+  const ano=dMes.slice(0,4),meses=[...Array(12)].map((_,i)=>ano+'-'+pad(i+1));
+  const res=meses.map(m=>({m,e:entradasMes(m),s:saidasMes(m)}));const tE=res.reduce((a,r)=>a+r.e,0),tS=res.reduce((a,r)=>a+r.s,0);
+  $('#app').innerHTML=avisosTopo()+`
+  <div class="kpis">
+    <div class="kpi"><span>Entradas recebidas no mês</span><b style="color:var(--ok)">${brl(ent)}</b><span>mensalidades + avulsos</span></div>
+    <div class="kpi"><span>Despesas pagas no mês</span><b style="color:var(--err)">${brl(sai)}</b></div>
+    <div class="kpi"><span>Saldo do mês</span><b style="color:${saldo<0?'var(--err)':'var(--ink)'}">${brl(saldo)}</b></div>
+    <div class="kpi"><span>Ainda a pagar no mês</span><b style="color:var(--warn)">${brl(aPagar)}</b>${vencidas.length?`<span style="color:var(--err)">${vencidas.length} vencida(s) no total</span>`:''}</div>
+  </div>
+  <div class="card"><div class="row">${mesNav(dMes,'dNav')}<span class="sp"></span>
+    ${fixasFaltando?`<button class="btn" onclick="lancarFixas()">↻ Lançar ${fixasFaltando} despesa(s) fixa(s)</button>`:''}
+    <button class="btn p" onclick="formDesp()">+ Nova despesa</button></div>
+    <div class="hint">Despesas marcadas como <b>fixas</b> (aluguel, internet, sistema…) podem ser repetidas a cada mês com um clique. O saldo considera a data em que cada valor foi efetivamente pago ou recebido.</div></div>
+  <div class="card">${!ls.length?`<div class="empty">Nenhuma despesa em ${fmtComp(dMes)}.${fixasFaltando?' Use <b>Lançar despesas fixas</b> para repetir as do mês anterior.':''}</div>`:
+  `<div class="tw"><table><thead><tr><th>Despesa</th><th>Categoria</th><th>Vencimento</th><th class="n">Valor</th><th>Situação</th><th style="text-align:right">Ações</th></tr></thead><tbody>
+  ${ls.map(d=>`<tr><td><b>${esc(d.desc)}</b>${d.fixa?' <span class="tag t-in">Fixa</span>':''}${d.forn?`<div class="muted" style="font-size:12.5px">${esc(d.forn)}</div>`:''}</td><td>${esc(d.cat||'—')}</td><td>${fmtData(d.venc)}</td><td class="n">${brl(d.valor)}</td>
+    <td>${tagD(d)}${d.status==='pago'?`<div class="muted" style="font-size:12px">${fmtData(d.pagoEm)} · ${esc(d.forma||'')}</div>`:''}</td>
+    <td><div class="acts">${d.status==='pago'?`<button class="btn s" onclick="desfazerDesp('${d.id}')">Desfazer</button>`:`<button class="btn s p" onclick="pagarDesp('${d.id}')">✓ Paguei</button>`}
+    <button class="btn s" title="Editar" onclick="formDesp('${d.id}')">✏️</button><button class="btn s d" title="Excluir" onclick="delDesp('${d.id}')">🗑</button></div></td></tr>`).join('')}
+  </tbody><tfoot><tr><td colspan="3" style="font:600 11px var(--fd);letter-spacing:.12em;text-transform:uppercase">Total do mês</td><td class="n"><b>${brl(totCat)}</b></td><td colspan="2"></td></tr></tfoot></table></div>
+  <div class="cats">${cats.map(([c,v])=>`<div><span>${esc(c)}</span><i style="width:${Math.max(2,v/cats[0][1]*100)}%"></i><b>${brl(v)}</b></div>`).join('')}</div>`}</div>
+  <div class="card"><h2>Resultado de ${ano}</h2><div class="tw"><table class="res"><thead><tr><th></th>${meses.map((m,i)=>`<th class="n${m===dMes?' sel':''}" style="cursor:pointer" onclick="dMes='${m}';rDespesas()">${MES_CURTO[i]}</th>`).join('')}<th class="n">Total</th></tr></thead><tbody>
+    <tr><td>Entradas</td>${res.map(r=>`<td class="n ok">${r.e?num2(r.e):'—'}</td>`).join('')}<td class="n ok"><b>${num2(tE)}</b></td></tr>
+    <tr><td>Despesas</td>${res.map(r=>`<td class="n neg">${r.s?num2(r.s):'—'}</td>`).join('')}<td class="n neg"><b>${num2(tS)}</b></td></tr>
+    <tr class="sal"><td>Saldo</td>${res.map(r=>{const s=r.e-r.s;return`<td class="n${s<0?' neg':''}">${r.e||r.s?num2(s):'—'}</td>`}).join('')}<td class="n${tE-tS<0?' neg':''}"><b>${num2(tE-tS)}</b></td></tr>
+  </tbody></table></div></div>`}
+function formDesp(id){const d=id?db.desp.find(x=>x.id===id):{fixa:false,venc:dMes===compAtual()?hoje():dMes+'-10'};
+  const cats=[...new Set([...CAT_DESP,...db.desp.map(x=>x.cat).filter(Boolean)])];
+  modal(`<h2>${id?'Editar despesa':'Nova despesa'}</h2><div class="grid">
+  <div class="full"><label>Descrição *</label><input id="dDesc" list="dDescs" value="${esc(d.desc)}" placeholder="Ex.: Aluguel da sala, Conta de energia">
+    <datalist id="dDescs">${[...new Set(db.desp.map(x=>x.desc))].map(s=>`<option value="${esc(s)}">`).join('')}</datalist></div>
+  <div><label>Categoria</label><input id="dCat" list="dCats" value="${esc(d.cat)}" placeholder="Escolha ou digite"><datalist id="dCats">${cats.map(c=>`<option value="${esc(c)}">`).join('')}</datalist></div>
+  <div><label>Fornecedor (opcional)</label><input id="dForn" value="${esc(d.forn)}"></div>
+  <div><label>Valor (R$) *</label><input id="dVal" inputmode="decimal" value="${d.valor!=null?moneyIn(d.valor):''}"></div>
+  <div><label>Vencimento *</label><input type="date" id="dVenc" value="${d.venc||''}"></div>
+  <div class="full"><label style="display:flex;gap:6px;align-items:center;color:var(--tx);margin:0"><input type="checkbox" id="dFixa" style="width:auto" ${d.fixa?'checked':''}> Despesa fixa (repete todo mês)</label></div>
+  ${id?'':`<div class="full"><label style="display:flex;gap:6px;align-items:center;color:var(--tx);margin:0"><input type="checkbox" id="dPago" style="width:auto" onchange="$('#dPgBox').style.display=this.checked?'':'none'"> Já está paga</label></div>
+  <div class="full" id="dPgBox" style="display:none"><div class="grid"><div><label>Data do pagamento</label><input type="date" id="dPgData" value="${hoje()}"></div>
+  <div><label>Forma</label><select id="dPgForma">${FORMAS.map(f=>`<option>${f}</option>`).join('')}</select></div></div></div>`}
+  <div class="full"><label>Observações</label><input id="dObs" value="${esc(d.obs)}"></div></div>
+  <div class="foot"><button class="btn" onclick="fechar()">Cancelar</button><button class="btn p" onclick="salvarDesp('${id||''}')">Salvar</button></div>`);
+  $('#dDesc').addEventListener('change',()=>{const a=db.desp.filter(x=>x.desc===$('#dDesc').value).pop();if(a){if(!$('#dCat').value)$('#dCat').value=a.cat||'';if(!$('#dForn').value)$('#dForn').value=a.forn||'';if(!$('#dVal').value)$('#dVal').value=moneyIn(a.valor)}});
+  $('#dDesc').focus()}
+function salvarDesp(id){const desc=$('#dDesc').value.trim(),valor=parseMoney($('#dVal').value),venc=$('#dVenc').value;
+  if(!desc){alert('Descreva a despesa.');return}if(valor<=0){alert('Informe o valor.');return}if(!venc){alert('Informe o vencimento.');return}
+  const v={desc,cat:$('#dCat').value.trim(),forn:$('#dForn').value.trim(),valor,venc,fixa:$('#dFixa').checked,obs:$('#dObs').value.trim()};
+  if(id){const d=db.desp.find(x=>x.id===id);if(v.fixa&&!d.serie)d.serie=uid();Object.assign(d,v)}
+  else{const d={id:uid(),...v,status:'aberto'};if(d.fixa)d.serie=uid();
+    if($('#dPago').checked)Object.assign(d,{status:'pago',pagoEm:$('#dPgData').value||hoje(),valorPago:valor,forma:$('#dPgForma').value});db.desp.push(d);dMes=venc.slice(0,7)}
+  save();fechar();render();toast('Despesa salva.')}
+function pagarDesp(id){const d=db.desp.find(x=>x.id===id);
+  modal(`<h2>Pagar despesa</h2><p class="muted" style="margin-top:-4px">${esc(d.desc)} · vence ${fmtData(d.venc)}</p><div class="grid">
+  <div><label>Data do pagamento</label><input type="date" id="pdData" value="${hoje()}"></div><div><label>Valor pago (R$)</label><input id="pdVal" inputmode="decimal" value="${moneyIn(d.valor)}"></div>
+  <div><label>Forma</label><select id="pdForma">${FORMAS.map(f=>`<option>${f}</option>`).join('')}</select></div></div>
+  <div class="foot"><button class="btn" onclick="fechar()">Cancelar</button><button class="btn p" onclick="confPagDesp('${id}')">Confirmar</button></div>`)}
+function confPagDesp(id){const d=db.desp.find(x=>x.id===id),v=parseMoney($('#pdVal').value);if(!$('#pdData').value||v<=0){alert('Informe data e valor.');return}
+  Object.assign(d,{status:'pago',pagoEm:$('#pdData').value,valorPago:v,forma:$('#pdForma').value});save();fechar();render();toast('Despesa marcada como paga.')}
+function desfazerDesp(id){if(!confirm('Desfazer o pagamento desta despesa?'))return;const d=db.desp.find(x=>x.id===id);d.status='aberto';delete d.pagoEm;delete d.valorPago;delete d.forma;save();render()}
+function delDesp(id){const d=db.desp.find(x=>x.id===id);if(!confirm(`Excluir a despesa "${d.desc}" de ${fmtData(d.venc)}?${d.fixa?'\n\n(As dos outros meses continuam.)':''}`))return;db.desp=db.desp.filter(x=>x.id!==id);save();render()}
+function fixasPendentes(comp){
+  const series={};db.desp.filter(d=>d.serie&&d.venc.slice(0,7)<comp).forEach(d=>{if(!series[d.serie]||d.venc>series[d.serie].venc)series[d.serie]=d});
+  return Object.values(series).filter(u=>u.fixa&&!db.desp.some(d=>d.serie===u.serie&&d.venc.slice(0,7)===comp))}
+function lancarFixas(){const ps=fixasPendentes(dMes);if(!ps.length)return;
+  if(!confirm(`Lançar em ${fmtComp(dMes)}:\n\n${ps.map(p=>'• '+p.desc+' — '+brl(p.valor)).join('\n')}`))return;
+  ps.forEach(u=>{const[y,m]=dMes.split('-').map(Number),ult=new Date(y,m,0).getDate(),dia=Math.min(+u.venc.slice(8,10),ult);
+    db.desp.push({id:uid(),desc:u.desc,cat:u.cat,forn:u.forn,valor:u.valor,venc:dMes+'-'+pad(dia),fixa:true,serie:u.serie,obs:u.obs||'',status:'aberto'})});
+  save();render();toast(ps.length+' despesa(s) fixa(s) lançada(s).')}
 
 /* ================= WhatsApp ================= */
-function preencher(tpl,l){const c=cli(l.cli),e=db.config;
-  const map={cliente:c.contato||c.nome,empresa:c.nome,competencia:fmtComp(l.comp),valor:brl(l.status==='pago'?(l.valorPago??l.valor):l.valor),vencimento:fmtData(l.venc),
+function preencher(tpl,l){const c=cliL(l),e=db.config;
+  const map={cliente:c.contato||c.nome,empresa:c.nome,competencia:l.avulso&&l.desc?l.desc:fmtComp(l.comp),valor:brl(l.status==='pago'?(l.valorPago??l.valor):l.valor),vencimento:fmtData(l.venc),
     pix:e.pix||'(cadastre sua chave PIX em Configurações)',escritorio:[e.resp,e.nome].filter(Boolean).join('\n'),recibo:l.recibo?recNum(l.recibo):'',pagamento:fmtData(l.pagoEm||''),descricao:l.desc||''};
   return tpl.replace(/\{(\w+)\}/g,(m,k)=>k in map?map[k]:m)}
 function tipoPadrao(l){const s=status(l);return s==='pago'?'pago':s==='atrasado'?'atraso':'lembrete'}
-function msg(id,tipo){const l=db.lanc.find(x=>x.id===id),c=cli(l.cli);tipo=tipo||tipoPadrao(l);
+function msg(id,tipo){const l=db.lanc.find(x=>x.id===id),c=cliL(l);tipo=tipo||tipoPadrao(l);
   modal(`<h2>Mensagem para WhatsApp</h2><p class="muted" style="margin-top:-6px">${esc(c.nome)}${c.whats?' · '+esc(c.whats):' · <span style="color:var(--err)">sem WhatsApp cadastrado</span>'}</p>
   <label>Modelo</label><select id="mTipo" onchange="$('#mTxt').value=preencher(db.config.tpl[this.value],db.lanc.find(x=>x.id==='${id}'))" style="margin-bottom:10px">
   ${[['lembrete','Lembrete de vencimento'],['atraso','Cobrança em atraso'],['pago','Confirmação de pagamento']].map(([v,t])=>`<option value="${v}"${v===tipo?' selected':''}>${t}</option>`).join('')}</select>
@@ -527,12 +703,12 @@ function msg(id,tipo){const l=db.lanc.find(x=>x.id===id),c=cli(l.cli);tipo=tipo|
 function abrirWa(f,txt){const n=waNum(f);if(!n){alert('Número inválido.');return}window.open('https://wa.me/'+n+'?text='+encodeURIComponent(txt),'_blank')}
 function lote(tipo){
   let ls=tipo==='atraso'?db.lanc.filter(l=>status(l)==='atrasado'):db.lanc.filter(l=>l.comp===fComp&&l.status!=='pago');
-  ls.sort((a,b)=>cli(a.cli).nome.localeCompare(cli(b.cli).nome));
+  ls.sort((a,b)=>cliL(a).nome.localeCompare(cliL(b).nome));
   if(!ls.length){alert('Nenhum lançamento em aberto para gerar mensagens.');return}
   window._lote=ls.map(l=>({l,t:preencher(db.config.tpl[tipo==='atraso'?'atraso':tipoPadrao(l)],l)}));
   modal(`<h2>${tipo==='atraso'?'Avisos de atraso':'Lembretes de '+fmtComp(fComp)} (${ls.length})</h2>
   <p class="muted" style="margin-top:-6px">Copie cada mensagem e cole na conversa do cliente. Os que já estão atrasados recebem o modelo de cobrança.</p>
-  ${window._lote.map((x,i)=>{const c=cli(x.l.cli);return`<div class="msgitem"><div class="row"><b>${esc(c.nome)}</b>${tagStatus(x.l)}<span class="sp"></span><span class="muted">${esc(c.whats||'sem WhatsApp')}</span></div>
+  ${window._lote.map((x,i)=>{const c=cliL(x.l);return`<div class="msgitem"><div class="row"><b>${esc(c.nome)}</b>${tagStatus(x.l)}<span class="sp"></span><span class="muted">${esc(c.whats||'sem WhatsApp')}</span></div>
   <pre>${esc(x.t)}</pre><div class="row"><button class="btn s wa" onclick="copiar(_lote[${i}].t);this.textContent='✓ Copiada'">📋 Copiar</button>
   ${c.whats?`<button class="btn s" onclick="abrirWa('${esc(c.whats)}',_lote[${i}].t)">Abrir no WhatsApp</button>`:''}</div></div>`}).join('')}
   <div class="foot"><button class="btn" onclick="fechar()">Fechar</button></div>`,true)}
