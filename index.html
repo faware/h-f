@@ -82,7 +82,19 @@ a{color:var(--ink)}
 table.ano{border-collapse:separate;border-spacing:0;min-width:1060px;width:100%}
 .ano th,.ano td{padding:0;text-align:center;border-bottom:1px solid var(--bd)}
 .ano thead th{position:sticky;top:0;z-index:2;padding:10px 4px;background:#fafaf8}
-.ano thead th.cur{background:var(--ink);color:#fff}
+.ano thead th.mh{cursor:pointer;user-select:none}
+.ano thead th.mh:hover{background:#ececea}
+.ano thead th.sel,.ano thead th.sel:hover{background:var(--ink);color:#fff}
+.ano thead th.hoje{box-shadow:inset 0 -3px 0 var(--ink)}
+.ano thead th.sel.hoje{box-shadow:inset 0 -3px 0 #fff}
+.ano td.csel{background:#f4f4f1}
+.ano .nm a{text-decoration:none;color:inherit}.ano .nm a:hover b{text-decoration:underline}
+.ano-n{font:700 20px var(--fd);letter-spacing:.08em;min-width:60px;text-align:center}
+.acoes-mes{margin-top:14px;padding-top:14px;border-top:1px solid var(--bd)}
+.acoes-mes .lbl{font:600 12px var(--fd);letter-spacing:.1em;text-transform:uppercase;color:var(--mut)}
+.acoes-mes .lbl b{color:var(--ink)}
+.card.aviso{border-color:#e6c27a;background:#fffaeb}
+.hint .leg{margin-top:8px}
 .ano .nm{position:sticky;left:0;z-index:1;background:#fff;text-align:left;padding:7px 12px;min-width:210px;max-width:250px;border-right:1.5px solid var(--ink)}
 .ano .nm b{display:block;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ano .nm span{display:block;font-size:11.5px;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -136,7 +148,7 @@ body:not(.logado) header{display:none}
 .login input{margin-bottom:14px}
 .login .msg{color:var(--err);font-size:13px;min-height:18px;margin-bottom:6px}
 .vers{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--bd)}
-@media (max-width:640px){.kpis{grid-template-columns:1fr 1fr}.kpi b{font-size:19px}header{padding:0 14px;gap:6px}.brand img{height:24px}nav button{padding:14px 9px;font-size:11px}nav button.on::after{bottom:6px}.hdrR{width:100%;padding-bottom:10px}.r-top{flex-direction:column;align-items:flex-start}.r-esc{text-align:left}}
+@media (max-width:640px){.acoes-mes .btn{flex:1 1 calc(50% - 10px);padding-left:6px;padding-right:10px;font-size:11px}.acoes-mes .lbl{width:100%}.acoes-mes .sp{display:none}.kpis{grid-template-columns:1fr 1fr}.kpi b{font-size:19px}header{padding:0 14px;gap:6px}.brand img{height:24px}nav button{padding:14px 9px;font-size:11px}nav button.on::after{bottom:6px}.hdrR{width:100%;padding-bottom:10px}.r-top{flex-direction:column;align-items:flex-start}.r-esc{text-align:left}}
 @media print{
   body{background:#fff}
   body>*:not(#print){display:none!important}
@@ -152,8 +164,6 @@ body:not(.logado) header{display:none}
 <header>
   <div class="brand"><img id="hdrLogo" alt=""><span>Honorários</span></div><small id="hdrEsc" hidden></small>
   <nav id="nav">
-    <button data-t="painel">Painel</button>
-    <button data-t="honor">Honorários</button>
     <button data-t="ano">Mensalidades</button>
     <button data-t="clientes">Clientes</button>
     <button data-t="config">Configurações</button>
@@ -305,62 +315,12 @@ function extenso(v){v=Math.round((Number(v)||0)*100);const re=Math.floor(v/100),
   if(ce){s+=(s?' e ':'')+ate999(ce)+(ce===1?' centavo':' centavos')}return s||'zero real'}
 
 /* ================= Navegação ================= */
-let tab='painel',fComp=compAtual(),fStatus='todos',fBusca='',pComp=compAtual(),cBusca='',cAtivos='ativos';
+let tab='ano',fComp=compAtual(),cBusca='',cAtivos='ativos';
 document.querySelectorAll('#nav button').forEach(b=>b.onclick=()=>{tab=b.dataset.t;render()});
 function render(){
   document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.t===tab));
   $('#hdrEsc').textContent=db.config.nome?'· '+db.config.nome:'';aplicarLogo();
-  ({painel:rPainel,honor:rHonor,ano:rAno,clientes:rClientes,config:rConfig})[tab]()}
-
-/* ================= Painel ================= */
-function rPainel(){
-  const ls=db.lanc.filter(l=>l.comp===pComp);
-  const prev=ls.reduce((a,l)=>a+l.valor,0),rec=ls.filter(l=>l.status==='pago').reduce((a,l)=>a+(l.valorPago??l.valor),0);
-  const aberto=ls.filter(l=>l.status!=='pago').reduce((a,l)=>a+l.valor,0);
-  const atr=db.lanc.filter(l=>status(l)==='atrasado').sort((a,b)=>a.venc.localeCompare(b.venc));
-  const totAtr=atr.reduce((a,l)=>a+l.valor,0);
-  const ativos=db.clientes.filter(c=>c.ativo).length;
-  const semGerar=db.clientes.filter(c=>c.ativo&&!db.lanc.some(l=>l.cli===c.id&&l.comp===pComp&&!l.avulso)).length;
-  const prox=db.lanc.filter(l=>status(l)==='aberto').sort((a,b)=>a.venc.localeCompare(b.venc)).slice(0,8);
-  let aviso='';
-  if(!db.config.nome)aviso+=`<div class="card" style="border-color:#f5c26b;background:#fffaeb">👋 Comece em <b>Configurações</b> com os dados do escritório (aparecem no recibo e nas mensagens) e depois cadastre seus clientes.</div>`;
-  const dias=db.ultBackup?Math.floor((Date.now()-new Date(db.ultBackup))/864e5):null;
-  if(db.clientes.length&&(dias===null||dias>=7))aviso+=`<div class="card" style="border-color:#f5c26b;background:#fffaeb" class="row">💾 ${dias===null?'Você ainda não fez nenhum backup.':'Último backup há '+dias+' dias.'} Os dados estão na nuvem, mas uma cópia sua é a garantia extra — <a href="#" onclick="exportar();return false">baixar backup agora</a>.</div>`;
-  $('#app').innerHTML=aviso+`
-  <div class="row" style="margin-bottom:14px"><h2 style="margin:0">Resumo da competência</h2><input type="month" value="${pComp}" style="width:auto" onchange="pComp=this.value;rPainel()"><span class="sp"></span>
-  ${semGerar?`<button class="btn p" onclick="gerarMes('${pComp}')">Gerar honorários de ${fmtComp(pComp)} (${semGerar})</button>`:''}</div>
-  <div class="kpis">
-    <div class="kpi"><span>Previsto em ${fmtComp(pComp)}</span><b>${brl(prev)}</b></div>
-    <div class="kpi"><span>Recebido</span><b style="color:var(--ok)">${brl(rec)}</b></div>
-    <div class="kpi"><span>Em aberto</span><b style="color:var(--warn)">${brl(aberto)}</b></div>
-    <div class="kpi"><span>Atrasados (todas as competências)</span><b style="color:var(--err)">${brl(totAtr)}</b><span>${atr.length} lançamento(s)</span></div>
-    <div class="kpi"><span>Clientes ativos</span><b>${ativos}</b></div>
-  </div>
-  <div class="card"><div class="row" style="margin-bottom:8px"><h3 style="margin:0">Em atraso</h3><span class="sp"></span>${atr.length?`<button class="btn s wa" onclick="lote('atraso')">Avisos de atraso em lote</button>`:''}</div>
-  ${tabelaLanc(atr,'Nenhum honorário em atraso. 🎉')}</div>
-  <div class="card"><h3>Próximos vencimentos</h3>${tabelaLanc(prox,'Nada em aberto por enquanto.')}</div>`}
-
-/* ================= Honorários ================= */
-function rHonor(){
-  let ls=db.lanc.filter(l=>!fComp||l.comp===fComp);
-  if(fStatus!=='todos')ls=ls.filter(l=>status(l)===fStatus);
-  if(fBusca){const b=fBusca.toLowerCase();ls=ls.filter(l=>cli(l.cli).nome.toLowerCase().includes(b))}
-  ls.sort((a,b)=>cli(a.cli).nome.localeCompare(cli(b.cli).nome)||a.venc.localeCompare(b.venc));
-  const tot=ls.reduce((a,l)=>a+l.valor,0);
-  $('#app').innerHTML=`<div class="card">
-  <div class="row" style="margin-bottom:12px">
-    <div><label>Competência</label><input type="month" value="${fComp}" onchange="fComp=this.value;rHonor()" style="width:auto"></div>
-    <div><label>Situação</label><select onchange="fStatus=this.value;rHonor()" style="width:auto">
-      ${[['todos','Todas'],['aberto','Em aberto'],['atrasado','Atrasado'],['pago','Pago']].map(([v,t])=>`<option value="${v}"${fStatus===v?' selected':''}>${t}</option>`).join('')}</select></div>
-    <div style="min-width:200px;flex:1"><label>Buscar cliente</label><input id="hb" value="${esc(fBusca)}" placeholder="Nome..." oninput="fBusca=this.value;rHonor();const e=$('#hb');e.focus();e.setSelectionRange(e.value.length,e.value.length)"></div>
-  </div>
-  <div class="row">
-    ${fComp?`<button class="btn p" onclick="gerarMes('${fComp}')">Gerar honorários de ${fmtComp(fComp)}</button>`:''}
-    <button class="btn" onclick="formLanc()">+ Lançamento avulso</button>
-    ${fComp?`<button class="btn" onclick="imprimirLote()">🖨 Imprimir recibos do mês</button><button class="btn wa" onclick="lote('lembrete')">Lembretes do mês em lote</button>`:''}
-    <span class="sp"></span><span class="muted">${ls.length} lançamento(s) · ${brl(tot)}</span>
-  </div></div>
-  <div class="card">${tabelaLanc(ls,fComp&&!db.lanc.some(l=>l.comp===fComp)?`Nenhum honorário gerado para ${fmtComp(fComp)}. Clique em <b>Gerar honorários</b> para criar os lançamentos de todos os clientes ativos.`:'Nenhum lançamento encontrado.')}</div>`}
+  ({ano:rAno,clientes:rClientes,config:rConfig})[tab]()}
 
 function tabelaLanc(ls,vazio){
   if(!ls.length)return`<div class="empty">${vazio}</div>`;
@@ -464,37 +424,71 @@ function imprimirLote(){
   const t=document.title;document.title=`Recibos ${fmtComp(fComp)}`;window.print();document.title=t}
 
 /* ================= Mensalidades: quadro anual ================= */
-let aAno=+hoje().slice(0,4),aFiltro='todos';
+let aAno=+hoje().slice(0,4),aFiltro='todos',aBusca='';
 const MES_CURTO=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
 const num2=v=>(Number(v)||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
 function mensal(cid,comp){return db.lanc.find(l=>l.cli===cid&&l.comp===comp&&!l.avulso)}
+function avisosTopo(){let a='';
+  if(!db.config.nome&&!db.config.resp)a+=`<div class="card aviso">👋 Comece em <b>Configurações</b> com os dados do escritório (aparecem no recibo e nas mensagens) e depois cadastre seus clientes.</div>`;
+  const dias=db.ultBackup?Math.floor((Date.now()-new Date(db.ultBackup))/864e5):null;
+  if(db.clientes.length&&(dias===null||dias>=7))a+=`<div class="card aviso">💾 ${dias===null?'Você ainda não fez nenhum backup.':'Último backup há '+dias+' dias.'} Os dados estão na nuvem, mas uma cópia sua é a garantia extra — <a href="#" onclick="exportar();return false">baixar backup agora</a>.</div>`;
+  return a}
 function rAno(){
   const pref=aAno+'-',compHoje=compAtual();
+  if(!fComp.startsWith(pref))fComp=compHoje.startsWith(pref)?compHoje:pref+'01';
   let cs=db.clientes.filter(c=>c.ativo||db.lanc.some(l=>l.cli===c.id&&l.comp.startsWith(pref)));
-  const devendo=c=>db.lanc.filter(l=>l.cli===c.id&&l.comp.startsWith(pref)&&status(l)==='atrasado');
-  if(aFiltro==='devendo')cs=cs.filter(c=>devendo(c).length);
-  cs.sort((a,b)=>a.nome.localeCompare(b.nome));
+  const atrasados=c=>db.lanc.filter(l=>l.cli===c.id&&!l.avulso&&l.comp.startsWith(pref)&&status(l)==='atrasado');
+  if(aFiltro==='devendo')cs=cs.filter(c=>atrasados(c).length);
+  if(aBusca){const b=aBusca.toLowerCase();cs=cs.filter(c=>(c.nome+' '+(c.fantasia||'')+' '+soDigitos(c.doc)).toLowerCase().includes(b))}
+  cs.sort((a,b)=>(a.fantasia||a.nome).localeCompare(b.fantasia||b.nome));
   const meses=[...Array(12)].map((_,i)=>pref+pad(i+1));
+  const doAno=db.lanc.filter(l=>l.comp.startsWith(pref));
   const tot=meses.map(comp=>{const ls=db.lanc.filter(l=>l.comp===comp&&!l.avulso);
     return{rec:ls.filter(l=>l.status==='pago').reduce((a,l)=>a+(l.valorPago??l.valor),0),ab:ls.filter(l=>l.status!=='pago').reduce((a,l)=>a+l.valor,0)}});
-  const totAtraso=cs.reduce((a,c)=>a+devendo(c).reduce((x,l)=>x+l.valor,0),0);
-  $('#app').innerHTML=`<div class="card"><div class="row">
-    <button class="btn s" onclick="aAno--;rAno()">◀</button><b style="font:700 20px var(--fd);letter-spacing:.08em;min-width:60px;text-align:center">${aAno}</b><button class="btn s" onclick="aAno++;rAno()">▶</button>
+  const kRec=doAno.filter(l=>l.status==='pago').reduce((a,l)=>a+(l.valorPago??l.valor),0);
+  const kAtr=doAno.filter(l=>status(l)==='atrasado'),kAtrV=kAtr.reduce((a,l)=>a+l.valor,0);
+  const kVenc=doAno.filter(l=>status(l)==='aberto').reduce((a,l)=>a+l.valor,0);
+  const devedores=new Set(kAtr.map(l=>l.cli)).size;
+  const semLanc=db.clientes.filter(c=>c.ativo&&!mensal(c.id,fComp)).length;
+  const abertosMes=db.lanc.filter(l=>l.comp===fComp&&l.status!=='pago').length;
+  const atrTodos=db.lanc.filter(l=>status(l)==='atrasado').length;
+  const totDv=cs.reduce((a,c)=>a+atrasados(c).reduce((x,l)=>x+l.valor,0),0);
+  const avulsos=doAno.filter(l=>l.avulso).sort((a,b)=>b.comp.localeCompare(a.comp));
+  $('#app').innerHTML=avisosTopo()+`
+  <div class="kpis">
+    <div class="kpi"><span>Recebido em ${aAno}</span><b style="color:var(--ok)">${brl(kRec)}</b></div>
+    <div class="kpi"><span>Em atraso</span><b style="color:var(--err)">${brl(kAtrV)}</b><span>${devedores} cliente(s) devendo</span></div>
+    <div class="kpi"><span>A vencer</span><b style="color:var(--warn)">${brl(kVenc)}</b></div>
+    <div class="kpi"><span>Clientes ativos</span><b>${db.clientes.filter(c=>c.ativo).length}</b></div>
+  </div>
+  <div class="card"><div class="row">
+    <button class="btn s" onclick="aAno--;rAno()" title="Ano anterior">◀</button><b class="ano-n">${aAno}</b><button class="btn s" onclick="aAno++;rAno()" title="Próximo ano">▶</button>
     <select style="width:auto" onchange="aFiltro=this.value;rAno()"><option value="todos">Todos os clientes</option><option value="devendo"${aFiltro==='devendo'?' selected':''}>Só quem está devendo</option></select>
+    <input id="ab" value="${esc(aBusca)}" placeholder="Buscar cliente..." style="flex:1;min-width:170px" oninput="aBusca=this.value;rAno();const e=$('#ab');e.focus();e.setSelectionRange(e.value.length,e.value.length)">
+    <button class="btn" onclick="formLanc()">+ Serviço avulso</button>
+  </div>
+  <div class="row acoes-mes">
+    <span class="lbl">Mês de <b>${fmtComp(fComp)}</b>:</span>
+    ${semLanc?`<button class="btn p" onclick="gerarMes('${fComp}')">Lançar para ${semLanc} cliente(s)</button>`:''}
+    <button class="btn" onclick="imprimirLote()"${abertosMes?'':' disabled'}>🖨 Imprimir recibos</button>
+    <button class="btn wa" onclick="lote('lembrete')"${abertosMes?'':' disabled'}>Lembretes WhatsApp</button>
     <span class="sp"></span>
-    <span class="leg"><i class="cp">✓</i> Pago <i class="co">0,00</i> A vencer <i class="ca">0,00</i> Em atraso <i class="cn">+</i> Não lançado</span></div>
-    <div class="hint">Clique num mês para marcar como pago, imprimir o recibo ou mandar mensagem. Em um mês ainda não lançado, o clique cria o honorário daquele mês.</div></div>
-  <div class="card" style="padding:0">${!cs.length?`<div class="empty">${aFiltro==='devendo'?'Ninguém em atraso em '+aAno+'. 🎉':'Nenhum cliente ativo.'}</div>`:
-  `<div class="ano-wrap"><table class="ano"><thead><tr><th class="nm">Cliente</th>${meses.map((m,i)=>`<th class="${m===compHoje?'cur':''}">${MES_CURTO[i]}</th>`).join('')}<th class="tt">Em atraso</th></tr></thead><tbody>
-  ${cs.map(c=>{const dv=devendo(c).reduce((a,l)=>a+l.valor,0);return`<tr><td class="nm"><b>${esc(c.fantasia||c.nome)}</b>${c.fantasia?`<span>${esc(c.nome)}</span>`:''}${!c.ativo?'<span>(inativo)</span>':''}</td>
-    ${meses.map(comp=>{const l=mensal(c.id,comp);
-      if(!l)return`<td><button class="cel cn" title="${fmtComp(comp)} — não lançado" onclick="celula('${c.id}','${comp}')">+</button></td>`;
+    ${atrTodos?`<button class="btn d" onclick="lote('atraso')">Cobrar atrasados (${atrTodos})</button>`:''}
+  </div>
+  <div class="hint">Clique no nome de um mês para escolhê-lo nas ações acima. Clique numa célula para marcar como pago, imprimir o recibo ou mandar mensagem.
+    <span class="leg"><i class="cp">✓</i> Pago <i class="co">0,00</i> A vencer <i class="ca">0,00</i> Em atraso <i class="cn">+</i> Não lançado</span></div></div>
+  <div class="card" style="padding:0">${!cs.length?`<div class="empty">${aFiltro==='devendo'?'Ninguém em atraso em '+aAno+'. 🎉':aBusca?'Nenhum cliente encontrado.':'Nenhum cliente cadastrado ainda. Vá em <b>Clientes</b> para cadastrar — dá para importar pelo CNPJ.'}</div>`:
+  `<div class="ano-wrap"><table class="ano"><thead><tr><th class="nm">Cliente</th>${meses.map((m,i)=>`<th class="mh${m===fComp?' sel':''}${m===compHoje?' hoje':''}" onclick="fComp='${m}';rAno()" title="Selecionar ${fmtComp(m)}">${MES_CURTO[i]}</th>`).join('')}<th class="tt">Em atraso</th></tr></thead><tbody>
+  ${cs.map(c=>{const dv=atrasados(c).reduce((a,l)=>a+l.valor,0);return`<tr><td class="nm"><a href="#" onclick="histCli('${c.id}');return false" title="Ver histórico"><b>${esc(c.fantasia||c.nome)}</b></a>${c.fantasia?`<span>${esc(c.nome)}</span>`:''}${!c.ativo?'<span>(inativo)</span>':''}</td>
+    ${meses.map(comp=>{const l=mensal(c.id,comp),sel=comp===fComp?' csel':'';
+      if(!l)return`<td class="${sel}"><button class="cel cn" title="${fmtComp(comp)} — não lançado" onclick="celula('${c.id}','${comp}')">+</button></td>`;
       const s=status(l),cls=s==='pago'?'cp':s==='atrasado'?'ca':'co';
       const tip=s==='pago'?`Pago em ${fmtData(l.pagoEm)} · ${brl(l.valorPago??l.valor)}`:`${s==='atrasado'?'Em atraso':'A vencer'} · vence ${fmtData(l.venc)} · ${brl(l.valor)}`;
-      return`<td><button class="cel ${cls}" title="${fmtComp(comp)} — ${tip}" onclick="abrirCelula('${l.id}')">${s==='pago'?'✓':num2(l.valor)}${l.recibo&&s!=='pago'?'<small>rec.</small>':''}</button></td>`}).join('')}
+      return`<td class="${sel}"><button class="cel ${cls}" title="${fmtComp(comp)} — ${tip}" onclick="abrirCelula('${l.id}')">${s==='pago'?'✓':num2(l.valor)}${l.recibo&&s!=='pago'?'<small>rec.</small>':''}</button></td>`}).join('')}
     <td class="tt ${dv?'neg':''}">${dv?brl(dv):'—'}</td></tr>`}).join('')}
   </tbody><tfoot><tr><td class="nm">Recebido</td>${tot.map(t=>`<td class="ft ok">${t.rec?num2(t.rec):'—'}</td>`).join('')}<td class="tt"></td></tr>
-  <tr><td class="nm">Em aberto</td>${tot.map(t=>`<td class="ft ab">${t.ab?num2(t.ab):'—'}</td>`).join('')}<td class="tt neg">${totAtraso?brl(totAtraso):'—'}</td></tr></tfoot></table></div>`}</div>`}
+  <tr><td class="nm">Em aberto</td>${tot.map(t=>`<td class="ft ab">${t.ab?num2(t.ab):'—'}</td>`).join('')}<td class="tt neg">${totDv?brl(totDv):'—'}</td></tr></tfoot></table></div>`}</div>
+  ${avulsos.length?`<div class="card"><h2>Serviços avulsos de ${aAno}</h2>${tabelaLanc(avulsos,'')}</div>`:''}`}
 function celula(cid,comp){const c=cli(cid);let l=mensal(cid,comp);
   if(!l){if(!confirm(`Lançar o honorário de ${fmtComp(comp)} para ${c.nome}?\n\nValor: ${brl(c.valor)} · Vencimento: ${fmtData(calcVenc(comp,c.dia))}`))return;
     l={id:uid(),cli:cid,comp,valor:c.valor,venc:calcVenc(comp,c.dia),desc:'',status:'aberto'};db.lanc.push(l);save();render()}
